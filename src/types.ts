@@ -53,7 +53,7 @@ export interface PaymentDetails {
   logo: string
 }
 
-export type SnapMode = 'identify' | 'spot-issues' | 'scan-drawing' | 'measure'
+export type SnapMode = 'identify' | 'scan-drawing' | 'measure'
 
 export type TabId = 'home' | 'jobs' | 'toolbox' | 'settings'
 
@@ -61,8 +61,17 @@ export type JobFilter = 'all' | 'active' | 'on-hold' | 'complete'
 
 export interface PendingChat {
   analysis: string
-  suggestion: string
-  mode: SnapMode
+  suggestion?: string
+  mode?: SnapMode
+  imageBase64?: string
+  imageMimeType?: string
+  freeText?: boolean
+}
+
+export interface Teammate {
+  id: string
+  name: string
+  phone: string
 }
 
 export interface QuoteLineItem {

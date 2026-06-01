@@ -1,5 +1,6 @@
-import { ArrowLeft, ChevronRight, Loader2, ScanLine } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Loader2, MessageCircle, ScanLine } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { Icon } from '../components/Icon'
 import { analyseImage, mapFetchError } from '../services/aiService'
 import type { Profile, SnapMode } from '../types'
 import { encodeImage, saveJson, STORAGE_KEYS } from '../utils/storage'
@@ -17,7 +18,6 @@ interface SnapScreenProps {
 
 const modeLabels: Record<SnapMode, string> = {
   identify: 'Identify',
-  'spot-issues': 'Spot issues',
   'scan-drawing': 'Scan drawing',
   measure: 'Measure & calculate',
 }
@@ -35,6 +35,8 @@ export function SnapScreen({
   const [step, setStep] = useState<SnapStep>('capture')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
+  const [imageBase64, setImageBase64] = useState('')
+  const [imageMimeType, setImageMimeType] = useState('image/jpeg')
   const [error, setError] = useState<string | null>(null)
   const [analysis, setAnalysis] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
@@ -58,10 +60,12 @@ export function SnapScreen({
     setStep('loading')
     setError(null)
     try {
-      const { base64, mimeType } = await encodeImage(file)
+      const encoded = await encodeImage(file)
+      setImageBase64(encoded.base64)
+      setImageMimeType(encoded.mimeType)
       const result = await analyseImage({
-        image: base64,
-        mimeType,
+        image: encoded.base64,
+        mimeType: encoded.mimeType,
         mode,
         trade: profile.trade,
       })
@@ -79,6 +83,17 @@ export function SnapScreen({
     onNavigateToNudge()
   }
 
+  const handleAskNudgeWithPhoto = () => {
+    saveJson(STORAGE_KEYS.pendingChat, {
+      analysis,
+      imageBase64,
+      imageMimeType,
+      freeText: true,
+      mode,
+    })
+    onNavigateToNudge()
+  }
+
   const handleAddToJob = () => {
     if (previewUrl && onAddToJob) {
       onAddToJob(analysis, previewUrl)
@@ -90,7 +105,7 @@ export function SnapScreen({
     <div className="flex h-full flex-col px-4 pb-4">
       <header className="flex items-center gap-3 pt-6">
         <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
-          <ArrowLeft size={22} className="text-white" />
+          <Icon icon={ArrowLeft} size={22} className="text-white" />
         </button>
         <h1 className="font-display text-base text-white">{modeLabels[mode]}</h1>
       </header>
@@ -98,7 +113,7 @@ export function SnapScreen({
       {step === 'capture' && (
         <div className="mt-6 flex flex-1 flex-col">
           <div className="flex aspect-[4/3] items-center justify-center rounded-xl bg-[var(--color-surface)]">
-            <ScanLine size={48} className="text-[var(--color-text-tertiary)]" />
+            <Icon icon={ScanLine} size={48} muted />
           </div>
           <input
             ref={cameraRef}
@@ -142,7 +157,7 @@ export function SnapScreen({
             />
             {step === 'loading' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Loader2 className="animate-spin text-white" size={32} />
+                <Loader2 size={32} className="animate-spin text-white" />
                 <p className="mt-2 font-body text-sm text-white">Reading the site...</p>
               </div>
             )}
@@ -176,7 +191,7 @@ export function SnapScreen({
       )}
 
       {step === 'results' && previewUrl && (
-        <div className="mt-6 flex flex-1 flex-col overflow-y-auto">
+        <div className="mt-6 flex flex-1 flex-col overflow-y-auto pb-4">
           <img
             src={previewUrl}
             alt="Result"
@@ -199,10 +214,20 @@ export function SnapScreen({
                 className="flex min-h-[48px] items-center justify-between rounded-xl border border-[var(--color-border)] border-l-4 border-l-white bg-[var(--color-surface)] px-4 text-left"
               >
                 <span className="font-body text-[15px] text-white">{s}</span>
-                <ChevronRight size={18} className="text-[var(--color-text-tertiary)]" />
+                <Icon icon={ChevronRight} size={18} muted />
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={handleAskNudgeWithPhoto}
+            className="mt-3 flex min-h-[48px] w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4"
+          >
+            <Icon icon={MessageCircle} size={20} className="text-white" />
+            <span className="flex-1 text-left font-body text-[15px] text-white">
+              Ask Nudge about this photo →
+            </span>
+          </button>
           {jobId && onAddToJob && (
             <button
               type="button"

@@ -22,6 +22,7 @@ export const STORAGE_KEYS = {
   profile: 'bang-on-profile',
   payment: 'bang-on-payment',
   pendingChat: 'bang-on-pending-chat',
+  team: 'bang-on-team',
 } as const
 
 export const encodeImage = (file: File): Promise<{ base64: string; mimeType: string }> => {

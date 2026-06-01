@@ -59,10 +59,18 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
           Client phone
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
         </label>
-        <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
-          Address
-          <input value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} />
-        </label>
+        <div>
+          {/* TODO: wire Australia Post address lookup API */}
+          <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+            Address
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Start typing an address..."
+              className={inputClass}
+            />
+          </label>
+        </div>
         <div>
           <p className="font-body text-[13px] text-[var(--color-text-secondary)]">Status</p>
           <div className="mt-2 flex gap-2">

@@ -11,9 +11,7 @@ export const config = {
 const getModePrompt = (mode: string): string => {
   const modes: Record<string, string> = {
     identify:
-      'The user wants to know what they are looking at. Identify the materials, components, or elements visible in the image.',
-    'spot-issues':
-      'The user wants to know if something looks wrong. Look for defects, non-compliance, safety issues, or anything that needs attention.',
+      'The user wants to know what they are looking at — identify materials, components, or elements, and spot any defects, non-compliance, or safety issues visible.',
     'scan-drawing':
       'The user has photographed a plan or technical drawing. Explain what it shows, identify key dimensions or details, and flag anything that needs clarification.',
     measure:
@@ -22,13 +20,21 @@ const getModePrompt = (mode: string): string => {
   return modes[mode] || modes.identify
 }
 
-const VISION_SYSTEM = `You are Nudge — the vision assistant inside Bang On, built for Australian tradies on site.
+const VISION_SYSTEM = `You are Nudge — the vision assistant inside Bangon, built for Australian tradies on site.
 Analyse construction site photos with practical, accurate, Aussie-tradie language. No emojis.
 Respond in this JSON format only:
 {
   "analysis": "2-4 sentence site assessment.",
   "suggestions": ["Question 1?", "Question 2?", "Question 3?"]
-}`
+}
+
+Generate exactly 3 follow-up prompts the user could tap to ask Nudge about what's in the image.
+Write them as questions the USER would ask, not questions directed at the user.
+They must be specific to what is visible in the image.
+Examples:
+- "Is this connection detail up to AS 1684 standard?"
+- "What fixing schedule should I use for this bracket?"
+- "Would this crack pattern indicate structural movement?"`
 
 function parseVisionResponse(content: string): { analysis: string; suggestions: string[] } {
   try {
@@ -88,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://bang-on.vercel.app',
-        'X-Title': 'Bang On',
+        'X-Title': 'Bangon',
       },
       body: JSON.stringify({
         model: 'anthropic/claude-opus-4',

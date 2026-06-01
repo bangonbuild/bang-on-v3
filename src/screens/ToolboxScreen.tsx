@@ -1,7 +1,7 @@
-import { FileText, ImageIcon, ReceiptText, Ruler } from 'lucide-react'
+import { BookOpen, FileText, ImageIcon, ReceiptText, Ruler } from 'lucide-react'
 import { FeaturePlaceholder } from '../components/FeaturePlaceholder'
 import { ToolCard } from '../components/ToolCard'
-import { ClipboardList, AlertTriangle } from 'lucide-react'
+import { AlertTriangle, ClipboardList } from 'lucide-react'
 
 interface ToolboxScreenProps {
   onQuote: () => void
@@ -50,12 +50,18 @@ export function ToolboxScreen({
           description="Document and report site defects"
           onTap={onComingSoon}
         />
+        <FeaturePlaceholder
+          icon={BookOpen}
+          title="Building codes"
+          description="State-by-state building code library"
+          onTap={onComingSoon}
+        />
       </div>
 
       <div className="mt-6">
         <p className="font-body text-[15px] text-white">Got a tool idea?</p>
         <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">
-          We&apos;re building Bang On with tradies. Suggest a tool and we&apos;ll add it to the backlog.
+          We&apos;re building Bangon with tradies. Suggest a tool and we&apos;ll add it to the backlog.
         </p>
         <button
           type="button"

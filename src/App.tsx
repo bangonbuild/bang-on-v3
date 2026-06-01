@@ -20,6 +20,7 @@ import { MeasureScreen } from './screens/MeasureScreen'
 import { NudgeScreen } from './screens/NudgeScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { SnapScreen } from './screens/SnapScreen'
+import { SuggestToolScreen } from './screens/SuggestToolScreen'
 import { ToolboxScreen } from './screens/ToolboxScreen'
 import type { GeneratedDocument, JobFilter, PhotoReport, SnapMode, TabId } from './types'
 
@@ -28,17 +29,17 @@ type Overlay =
   | { type: 'nudge'; jobId?: string }
   | { type: 'snap'; mode: SnapMode; jobId?: string }
   | { type: 'job-detail'; jobId: string }
-  | { type: 'job-form'; jobId?: string }
+  | { type: 'job-form'; jobId?: string; returnToJobId?: string }
   | { type: 'quote'; docType: 'quote' | 'invoice'; jobId?: string }
   | { type: 'photo-report'; jobId?: string }
   | { type: 'measure' }
+  | { type: 'suggest-tool' }
 
 export default function App() {
   const [splash, setSplash] = useState(true)
   const [tab, setTab] = useState<TabId>('home')
   const [overlay, setOverlay] = useState<Overlay>({ type: 'none' })
   const [snapDrawerOpen, setSnapDrawerOpen] = useState(false)
-  const [snapJobId, setSnapJobId] = useState<string | undefined>()
   const [jobFilter, setJobFilter] = useState<JobFilter>('all')
   const [weatherOpen, setWeatherOpen] = useState(false)
 
@@ -53,18 +54,44 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [])
 
+  const goToJobDetail = useCallback((jobId: string) => {
+    setOverlay({ type: 'job-detail', jobId })
+  }, [])
+
   const closeOverlay = useCallback(() => setOverlay({ type: 'none' }), [])
 
-  const openSnap = (mode: SnapMode, jobId?: string) => {
-    setOverlay({ type: 'snap', mode, jobId })
+  const closeQuote = useCallback(() => {
+    if (overlay.type === 'quote' && overlay.jobId) {
+      goToJobDetail(overlay.jobId)
+    } else {
+      closeOverlay()
+    }
+  }, [overlay, goToJobDetail, closeOverlay])
+
+  const closePhotoReport = useCallback(() => {
+    if (overlay.type === 'photo-report' && overlay.jobId) {
+      goToJobDetail(overlay.jobId)
+    } else {
+      closeOverlay()
+    }
+  }, [overlay, goToJobDetail, closeOverlay])
+
+  const handleTabChange = useCallback(
+    (newTab: TabId) => {
+      if (overlay.type !== 'none') {
+        setOverlay({ type: 'none' })
+      }
+      setTab(newTab)
+    },
+    [overlay.type],
+  )
+
+  const handleSnapFromDrawer = (mode: SnapMode) => {
+    setOverlay({ type: 'snap', mode })
   }
 
   const handleSpeak = () => {
     showToast('Voice input coming soon.')
-  }
-
-  const handleSnapFromDrawer = (mode: SnapMode) => {
-    openSnap(mode, snapJobId)
   }
 
   const saveQuoteToJob = (jobId: string, doc: GeneratedDocument) => {
@@ -74,7 +101,18 @@ export default function App() {
       amount: doc.total,
     })
     showToast('Saved to job timeline.')
+    goToJobDetail(jobId)
   }
+
+  const hideNav =
+    overlay.type === 'snap' ||
+    overlay.type === 'job-form' ||
+    overlay.type === 'quote' ||
+    overlay.type === 'photo-report' ||
+    overlay.type === 'measure' ||
+    overlay.type === 'suggest-tool'
+
+  const showMainContent = overlay.type === 'none' || overlay.type === 'nudge' || overlay.type === 'job-detail'
 
   const renderTab = () => {
     switch (tab) {
@@ -84,13 +122,9 @@ export default function App() {
             jobs={jobs}
             weather={weather}
             onWeatherClick={() => setWeatherOpen(true)}
-            onSnap={() => {
-              setSnapJobId(undefined)
-              setSnapDrawerOpen(true)
-            }}
+            onSnap={() => setSnapDrawerOpen(true)}
             onSpeak={handleSpeak}
-            onNudge={() => setOverlay({ type: 'nudge' })}
-            onJob={(id) => setOverlay({ type: 'job-detail', jobId: id })}
+            onJob={(id) => goToJobDetail(id)}
             onNewJob={() => setOverlay({ type: 'job-form' })}
           />
         )
@@ -100,7 +134,7 @@ export default function App() {
             jobs={jobs}
             filter={jobFilter}
             onFilterChange={setJobFilter}
-            onJob={(id) => setOverlay({ type: 'job-detail', jobId: id })}
+            onJob={(id) => goToJobDetail(id)}
             onNewJob={() => setOverlay({ type: 'job-form' })}
           />
         )
@@ -112,7 +146,7 @@ export default function App() {
             onMeasure={() => setOverlay({ type: 'measure' })}
             onPhotoReport={() => setOverlay({ type: 'photo-report' })}
             onComingSoon={() => showToast("Coming soon — we're working on it.")}
-            onSuggest={() => showToast("Thanks — we'll add it to the backlog.")}
+            onSuggest={() => setOverlay({ type: 'suggest-tool' })}
           />
         )
       case 'settings':
@@ -123,6 +157,7 @@ export default function App() {
             payment={payment}
             setPayment={setPayment}
             onClearChats={clearChats}
+            showToast={showToast}
           />
         )
       default:
@@ -143,28 +178,6 @@ export default function App() {
         />
       )
     }
-    if (overlay.type === 'snap') {
-      return (
-        <SnapScreen
-          mode={overlay.mode}
-          jobId={overlay.jobId}
-          profile={profile}
-          onBack={closeOverlay}
-          onNavigateToNudge={() => setOverlay({ type: 'nudge', jobId: overlay.jobId })}
-          onAddToJob={
-            overlay.jobId
-              ? (analysis, imageUrl) => {
-                  addTimelineEntry(overlay.jobId!, {
-                    type: 'photo',
-                    content: analysis,
-                    imageUrl,
-                  })
-                }
-              : undefined
-          }
-        />
-      )
-    }
     if (overlay.type === 'job-detail') {
       const job = getJob(overlay.jobId)
       if (!job) return null
@@ -173,15 +186,15 @@ export default function App() {
           job={job}
           profile={profile}
           onBack={closeOverlay}
-          onEdit={() => setOverlay({ type: 'job-form', jobId: job.id })}
+          onEdit={() =>
+            setOverlay({ type: 'job-form', jobId: job.id, returnToJobId: job.id })
+          }
           onNudge={() => setOverlay({ type: 'nudge', jobId: job.id })}
-          onSnap={() => {
-            setSnapJobId(job.id)
-            setSnapDrawerOpen(true)
-          }}
           onQuote={() => setOverlay({ type: 'quote', docType: 'quote', jobId: job.id })}
-          onAddNote={(content) =>
-            addTimelineEntry(job.id, { type: 'note', content })
+          onInvoice={() => setOverlay({ type: 'quote', docType: 'invoice', jobId: job.id })}
+          onAddNote={(content) => addTimelineEntry(job.id, { type: 'note', content })}
+          onAddPhoto={(content, imageUrl) =>
+            addTimelineEntry(job.id, { type: 'photo', content, imageUrl })
           }
           onUpdateEntry={(entryId, updates) =>
             updateTimelineEntry(job.id, entryId, updates)
@@ -190,19 +203,50 @@ export default function App() {
         />
       )
     }
+    return null
+  }
+
+  const renderFullScreenOverlay = () => {
+    if (overlay.type === 'snap') {
+      return (
+        <SnapScreen
+          mode={overlay.mode}
+          jobId={overlay.jobId}
+          profile={profile}
+          onBack={() => {
+            if (overlay.jobId) goToJobDetail(overlay.jobId)
+            else closeOverlay()
+          }}
+          onNavigateToNudge={() =>
+            setOverlay({ type: 'nudge', jobId: overlay.jobId })
+          }
+          onAddToJob={
+            overlay.jobId
+              ? (analysis, imageUrl) => {
+                  addTimelineEntry(overlay.jobId!, { type: 'photo', content: analysis, imageUrl })
+                  goToJobDetail(overlay.jobId!)
+                }
+              : undefined
+          }
+        />
+      )
+    }
     if (overlay.type === 'job-form') {
       const existing = overlay.jobId ? getJob(overlay.jobId) : undefined
       return (
         <JobFormScreen
           job={existing}
-          onBack={closeOverlay}
+          onBack={() => {
+            if (overlay.returnToJobId) goToJobDetail(overlay.returnToJobId)
+            else closeOverlay()
+          }}
           onSave={(data) => {
             if (existing) {
               updateJob(existing.id, data)
-              setOverlay({ type: 'job-detail', jobId: existing.id })
+              goToJobDetail(existing.id)
             } else {
               const created = addJob(data)
-              setOverlay({ type: 'job-detail', jobId: created.id })
+              goToJobDetail(created.id)
             }
           }}
         />
@@ -216,11 +260,9 @@ export default function App() {
           job={job}
           profile={profile}
           payment={payment}
-          onClose={closeOverlay}
+          onClose={closeQuote}
           onSaveToJob={
-            overlay.jobId
-              ? (doc) => saveQuoteToJob(overlay.jobId!, doc)
-              : undefined
+            overlay.jobId ? (doc) => saveQuoteToJob(overlay.jobId!, doc) : undefined
           }
           showToast={showToast}
         />
@@ -232,14 +274,12 @@ export default function App() {
         <PhotoReportGenerator
           job={job}
           profile={profile}
-          onClose={closeOverlay}
+          onClose={closePhotoReport}
           onSaveToJob={
             overlay.jobId
               ? (report: PhotoReport) => {
-                  addTimelineEntry(overlay.jobId!, {
-                    type: 'photo',
-                    content: report.summary,
-                  })
+                  addTimelineEntry(overlay.jobId!, { type: 'photo', content: report.summary })
+                  goToJobDetail(overlay.jobId!)
                 }
               : undefined
           }
@@ -255,11 +295,19 @@ export default function App() {
         />
       )
     }
+    if (overlay.type === 'suggest-tool') {
+      return (
+        <SuggestToolScreen
+          onBack={closeOverlay}
+          onSubmit={() => {
+            showToast("Thanks — we'll add it to the backlog.")
+            closeOverlay()
+          }}
+        />
+      )
+    }
     return null
   }
-
-  const hasOverlay = overlay.type !== 'none'
-  const showBottomNav = !hasOverlay || overlay.type === 'nudge'
 
   return (
     <div className="mx-auto flex h-full max-w-lg flex-col bg-[var(--color-bg)]">
@@ -270,37 +318,47 @@ export default function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="flex flex-1 flex-col overflow-hidden"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <main className="flex-1 overflow-hidden">
-            <AnimatePresence mode="wait">
-              {!hasOverlay ? (
-                <motion.div
-                  key={tab}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15, ease: 'easeInOut' }}
-                  className="h-full overflow-y-auto"
-                >
-                  {renderTab()}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={overlay.type + ('jobId' in overlay ? overlay.jobId : '')}
-                  initial={{ x: '100%', opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: '100%', opacity: 0 }}
-                  transition={{ duration: 0.25, ease: 'easeInOut' }}
-                  className="h-full overflow-y-auto"
-                >
-                  {renderOverlay()}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <main className="min-h-0 flex-1 overflow-hidden">
+            {showMainContent ? (
+              <AnimatePresence mode="wait">
+                {overlay.type === 'none' ? (
+                  <motion.div
+                    key={tab}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15, ease: 'easeInOut' }}
+                    className="h-full overflow-y-auto"
+                  >
+                    {renderTab()}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={overlay.type + ('jobId' in overlay ? overlay.jobId ?? '' : '')}
+                    initial={overlay.type === 'job-detail' ? { x: '100%', opacity: 0 } : { opacity: 0 }}
+                    animate={overlay.type === 'job-detail' ? { x: 0, opacity: 1 } : { opacity: 1 }}
+                    exit={overlay.type === 'job-detail' ? { x: '100%', opacity: 0 } : { opacity: 0 }}
+                    transition={{ duration: overlay.type === 'job-detail' ? 0.25 : 0.15, ease: 'easeInOut' }}
+                    className="flex h-full min-h-0 flex-col"
+                  >
+                    {renderOverlay()}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            ) : (
+              <div className="h-full overflow-y-auto">{renderFullScreenOverlay()}</div>
+            )}
           </main>
 
-          {showBottomNav && <BottomNav active={tab} onChange={setTab} />}
+          {!hideNav && (
+            <BottomNav
+              active={tab}
+              onChange={handleTabChange}
+              onNudge={() => setOverlay({ type: 'nudge' })}
+            />
+          )}
           <Toast message={toastMessage} visible={toastVisible} />
         </motion.div>
       )}
@@ -312,8 +370,7 @@ export default function App() {
       />
       <WeatherModal
         open={weatherOpen}
-        temp={weather.temp}
-        description={weather.description}
+        weather={weather}
         onClose={() => setWeatherOpen(false)}
         onRefresh={weather.refresh}
       />

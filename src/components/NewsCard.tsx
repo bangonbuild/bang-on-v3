@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react'
+import { Icon } from './Icon'
 
 interface NewsCardProps {
   headline: string
@@ -20,7 +21,7 @@ export function NewsCard({ headline, timestamp }: NewsCardProps) {
         <p className="mt-1 line-clamp-2 font-body text-sm font-medium text-white">{headline}</p>
         <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">{timestamp}</p>
       </div>
-      <ChevronRight size={18} className="shrink-0 text-[var(--color-text-tertiary)]" />
+      <Icon icon={ChevronRight} size={18} muted />
     </a>
   )
 }

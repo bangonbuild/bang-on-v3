@@ -1,4 +1,5 @@
-import { MessageCircle, Mic, Plus, ScanLine } from 'lucide-react'
+import { Mic, Plus, ScanLine } from 'lucide-react'
+import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import { NewsCard } from '../components/NewsCard'
 import { WeatherPill } from '../components/WeatherPill'
@@ -6,11 +7,10 @@ import type { Job } from '../types'
 
 interface HomeScreenProps {
   jobs: Job[]
-  weather: { temp: number | null; description: string; loading: boolean }
+  weather: { temp: number | null; rainChance: number; loading: boolean }
   onWeatherClick: () => void
   onSnap: () => void
   onSpeak: () => void
-  onNudge: () => void
   onJob: (id: string) => void
   onNewJob: () => void
 }
@@ -21,7 +21,6 @@ export function HomeScreen({
   onWeatherClick,
   onSnap,
   onSpeak,
-  onNudge,
   onJob,
   onNewJob,
 }: HomeScreenProps) {
@@ -31,26 +30,26 @@ export function HomeScreen({
     <div className="px-4 pb-24 pt-6">
       <header className="flex items-start justify-between">
         <div>
-          <h1 className="font-display text-[28px] font-bold text-white">Bang On</h1>
+          <h1 className="font-display text-[28px] font-bold text-white">Bangon</h1>
           <p className="mt-1 font-display text-[13px] text-[var(--color-text-secondary)]">
             Built for the job.
           </p>
         </div>
         <WeatherPill
           temp={weather.temp}
-          description={weather.description}
+          rainChance={weather.rainChance}
           loading={weather.loading}
           onClick={onWeatherClick}
         />
       </header>
 
-      <div className="mt-6 grid grid-cols-2 gap-2">
+      <div className="mt-10 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={onSnap}
           className="rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
         >
-          <ScanLine size={24} className="text-black" />
+          <ScanLine size={24} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />
           <p className="font-display mt-3 text-lg font-bold text-black">SNAP</p>
           <p className="mt-1 font-body text-[13px] text-black/60">Photo → site advice</p>
         </button>
@@ -59,26 +58,11 @@ export function HomeScreen({
           onClick={onSpeak}
           className="rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
         >
-          <Mic size={24} className="text-black" />
+          <Mic size={24} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />
           <p className="font-display mt-3 text-lg font-bold text-black">SPEAK</p>
           <p className="mt-1 font-body text-[13px] text-black/60">Ask with your voice</p>
         </button>
       </div>
-
-      <button
-        type="button"
-        onClick={onNudge}
-        className="mt-2 flex w-full items-start gap-3 rounded-xl border border-white bg-black p-5 text-left"
-      >
-        <div className="pulse-dot mt-2 shrink-0" />
-        <div>
-          <div className="flex items-center gap-2">
-            <MessageCircle size={20} className="text-white" />
-            <p className="font-display text-lg font-bold text-white">Ask Nudge</p>
-          </div>
-          <p className="mt-1 font-body text-[13px] text-white/60">What&apos;s the job?</p>
-        </div>
-      </button>
 
       <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
         Your jobs
@@ -89,7 +73,7 @@ export function HomeScreen({
           onClick={onNewJob}
           className="mt-2 flex w-full items-center gap-3 rounded-xl border border-dashed border-[var(--color-border-2)] bg-[var(--color-surface)] p-4"
         >
-          <Plus size={24} className="text-[var(--color-text-tertiary)]" />
+          <Icon icon={Plus} size={24} muted />
           <div className="text-left">
             <p className="font-body font-medium text-white">Start your first job</p>
             <p className="font-body text-[13px] text-[var(--color-text-secondary)]">
@@ -107,7 +91,7 @@ export function HomeScreen({
             onClick={onNewJob}
             className="flex h-auto w-[120px] shrink-0 items-center justify-center rounded-xl border border-dashed border-[var(--color-border-2)]"
           >
-            <Plus size={28} className="text-[var(--color-text-tertiary)]" />
+            <Icon icon={Plus} size={28} muted />
           </button>
         </div>
       )}

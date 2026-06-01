@@ -1,12 +1,7 @@
-import {
-  ArrowLeft,
-  FileText,
-  MessageCircle,
-  ReceiptText,
-  ScanLine,
-  StickyNote,
-} from 'lucide-react'
-import { useState } from 'react'
+import { ArrowLeft, FileText, ReceiptText, StickyNote } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Icon } from '../components/Icon'
+import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
 import { StatusBadge } from '../components/StatusBadge'
 import { sendChatMessage } from '../services/aiService'
 import type { Job, Profile, TimelineEntry } from '../types'
@@ -18,12 +13,15 @@ interface JobDetailScreenProps {
   onBack: () => void
   onEdit: () => void
   onNudge: () => void
-  onSnap: () => void
   onQuote: () => void
+  onInvoice: () => void
   onAddNote: (content: string) => void
+  onAddPhoto: (content: string, imageUrl: string) => void
   onUpdateEntry: (entryId: string, updates: Partial<TimelineEntry>) => void
   onOpenDoc: (entry: TimelineEntry) => void
 }
+
+type PhotoStep = 'idle' | 'capture' | 'preview'
 
 export function JobDetailScreen({
   job,
@@ -31,17 +29,64 @@ export function JobDetailScreen({
   onBack,
   onEdit,
   onNudge,
-  onSnap,
   onQuote,
+  onInvoice,
   onAddNote,
+  onAddPhoto,
   onUpdateEntry,
   onOpenDoc,
 }: JobDetailScreenProps) {
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
   const [noteText, setNoteText] = useState('')
+  const [photoStep, setPhotoStep] = useState<PhotoStep>('idle')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoCaption, setPhotoCaption] = useState('')
   const [polishId, setPolishId] = useState<string | null>(null)
   const [polishPreview, setPolishPreview] = useState<{ original: string; polished: string } | null>(null)
   const [polishLoading, setPolishLoading] = useState(false)
+  const cameraRef = useRef<HTMLInputElement>(null)
+  const libraryRef = useRef<HTMLInputElement>(null)
+
+  const handleAction = (action: JobAction) => {
+    switch (action) {
+      case 'nudge':
+        onNudge()
+        break
+      case 'note':
+        setNoteOpen(true)
+        break
+      case 'photo':
+        setPhotoStep('capture')
+        break
+      case 'quote':
+        onQuote()
+        break
+      case 'invoice':
+        onInvoice()
+        break
+    }
+  }
+
+  const handlePhotoFile = (file: File | undefined) => {
+    if (!file) return
+    setPhotoUrl(URL.createObjectURL(file))
+    setPhotoStep('preview')
+  }
+
+  const handleSavePhoto = () => {
+    if (!photoUrl) return
+    onAddPhoto(photoCaption.trim() || 'Site photo', photoUrl)
+    setPhotoStep('idle')
+    setPhotoUrl(null)
+    setPhotoCaption('')
+  }
+
+  const cancelPhoto = () => {
+    setPhotoStep('idle')
+    setPhotoUrl(null)
+    setPhotoCaption('')
+  }
 
   const handleSaveNote = () => {
     if (!noteText.trim()) return
@@ -66,43 +111,92 @@ export function JobDetailScreen({
     }
   }
 
-  const actions = [
-    { icon: MessageCircle, label: 'Ask Nudge', onClick: onNudge },
-    { icon: StickyNote, label: 'Add note', onClick: () => setNoteOpen(true) },
-    { icon: ScanLine, label: 'Snap', onClick: onSnap },
-    { icon: ReceiptText, label: 'Quote', onClick: onQuote },
-  ]
-
   return (
-    <div className="px-4 pb-24 pt-6">
-      <header className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
-            <ArrowLeft size={22} className="text-white" />
+    <div className="flex min-h-full flex-col px-4 pb-24 pt-6">
+      <header>
+        <div className="flex items-start justify-between">
+          <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
+            <Icon icon={ArrowLeft} size={22} className="text-white" />
           </button>
-          <div>
-            <h1 className="font-display text-xl font-bold text-white">{job.name}</h1>
-            <StatusBadge status={job.status} />
-          </div>
+          <button type="button" onClick={onEdit} className="font-body text-sm text-[var(--color-text-secondary)]">
+            Edit
+          </button>
         </div>
-        <button type="button" onClick={onEdit} className="font-body text-sm text-[var(--color-text-secondary)]">
-          Edit
-        </button>
+        <div className="mt-2 flex items-start justify-between gap-2">
+          <h1 className="font-display text-xl font-bold text-white">{job.name}</h1>
+          <StatusBadge status={job.status} />
+        </div>
+        <p className="mt-2 font-body text-sm text-[var(--color-text-secondary)]">{job.client}</p>
+        {job.phone && (
+          <p className="font-body text-sm text-[var(--color-text-secondary)]">{job.phone}</p>
+        )}
+        {job.address && (
+          <p className="font-body text-[13px] text-[var(--color-text-tertiary)]">{job.address}</p>
+        )}
+        <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
+          Last updated: {formatRelativeTime(job.updatedAt)}
+        </p>
       </header>
 
-      <div className="mt-4 grid grid-cols-4 gap-2">
-        {actions.map(({ icon: Icon, label, onClick }) => (
+      {photoStep === 'capture' && (
+        <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => handlePhotoFile(e.target.files?.[0])}
+          />
+          <input
+            ref={libraryRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => handlePhotoFile(e.target.files?.[0])}
+          />
           <button
-            key={label}
             type="button"
-            onClick={onClick}
-            className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]"
+            onClick={() => cameraRef.current?.click()}
+            className="min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
           >
-            <Icon size={20} className="text-white" />
-            <span className="font-body text-[11px] text-[var(--color-text-secondary)]">{label}</span>
+            Take photo
           </button>
-        ))}
-      </div>
+          <button
+            type="button"
+            onClick={() => libraryRef.current?.click()}
+            className="mt-2 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] font-body text-white"
+          >
+            Choose from library
+          </button>
+          <button type="button" onClick={cancelPhoto} className="mt-2 w-full font-body text-sm text-[var(--color-text-secondary)]">
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {photoStep === 'preview' && photoUrl && (
+        <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <img src={photoUrl} alt="" className="max-h-[200px] w-full rounded-xl object-cover" />
+          <textarea
+            value={photoCaption}
+            onChange={(e) => setPhotoCaption(e.target.value)}
+            placeholder="Add a note to this photo..."
+            rows={3}
+            className="mt-3 w-full bg-transparent font-body text-white outline-none placeholder:text-[var(--color-text-tertiary)]"
+          />
+          <button
+            type="button"
+            onClick={handleSavePhoto}
+            className="mt-2 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+          >
+            Save to timeline
+          </button>
+          <button type="button" onClick={cancelPhoto} className="mt-2 w-full font-body text-sm text-[var(--color-text-secondary)]">
+            Cancel
+          </button>
+        </div>
+      )}
 
       {noteOpen && (
         <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -120,6 +214,16 @@ export function JobDetailScreen({
           >
             Save note
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setNoteOpen(false)
+              setNoteText('')
+            }}
+            className="mt-2 w-full font-body text-sm text-[var(--color-text-secondary)]"
+          >
+            Cancel
+          </button>
         </div>
       )}
 
@@ -133,7 +237,10 @@ export function JobDetailScreen({
             <button
               type="button"
               onClick={() => {
-                onUpdateEntry(polishId, { content: polishPreview.polished, polishedContent: polishPreview.polished })
+                onUpdateEntry(polishId, {
+                  content: polishPreview.polished,
+                  polishedContent: polishPreview.polished,
+                })
                 setPolishPreview(null)
                 setPolishId(null)
               }}
@@ -155,13 +262,21 @@ export function JobDetailScreen({
         </div>
       )}
 
-      <div className="mt-6">
+      <button
+        type="button"
+        onClick={() => setDrawerOpen(true)}
+        className="mt-6 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+      >
+        + Add to job
+      </button>
+
+      <div className="mt-6 flex-1">
         {job.timeline.length === 0 ? (
           <div className="py-12 text-center">
             <p className="font-body text-[var(--color-text-tertiary)]">No entries yet.</p>
             <button
               type="button"
-              onClick={() => setNoteOpen(true)}
+              onClick={() => setDrawerOpen(true)}
               className="mt-2 font-body text-[var(--color-text-secondary)] underline"
             >
               Add your first note →
@@ -181,6 +296,8 @@ export function JobDetailScreen({
           </div>
         )}
       </div>
+
+      <JobActionDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onSelect={handleAction} />
     </div>
   )
 }
@@ -196,7 +313,7 @@ function TimelineItem({
   onPolish: () => void
   onOpenDoc: () => void
 }) {
-  const Icon = entry.type === 'quote' ? ReceiptText : entry.type === 'invoice' ? FileText : StickyNote
+  const DocIcon = entry.type === 'quote' ? ReceiptText : FileText
 
   if (entry.type === 'photo' && entry.imageUrl) {
     return (
@@ -217,7 +334,7 @@ function TimelineItem({
         onClick={onOpenDoc}
         className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
       >
-        <Icon size={18} className="text-[var(--color-text-tertiary)]" />
+        <Icon icon={DocIcon} size={18} muted />
         <div>
           <p className="font-body text-white capitalize">
             {entry.type} — ${entry.amount?.toLocaleString() ?? '0'}
@@ -232,7 +349,7 @@ function TimelineItem({
 
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <StickyNote size={16} className="text-[var(--color-text-tertiary)]" />
+      <Icon icon={StickyNote} size={16} muted />
       <p className="mt-2 font-body text-[15px] text-white">{entry.content}</p>
       <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
         {formatRelativeTime(entry.timestamp)}

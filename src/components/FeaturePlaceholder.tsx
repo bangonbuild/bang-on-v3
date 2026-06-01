@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import { Icon } from './Icon'
 
 interface FeaturePlaceholderProps {
   icon: LucideIcon
@@ -8,7 +9,7 @@ interface FeaturePlaceholderProps {
 }
 
 export function FeaturePlaceholder({
-  icon: Icon,
+  icon: IconLucide,
   title,
   description,
   onTap,
@@ -19,7 +20,7 @@ export function FeaturePlaceholder({
       onClick={onTap}
       className="flex w-full items-start gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
     >
-      <Icon size={20} className="mt-0.5 shrink-0 text-[var(--color-text-tertiary)]" />
+      <Icon icon={IconLucide} size={20} className="mt-0.5" muted />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <p className="font-body text-sm font-medium text-white">{title}</p>

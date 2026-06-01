@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertCircle, FileText, Ruler, ScanLine } from 'lucide-react'
+import { FileText, Ruler, ScanLine } from 'lucide-react'
+import { Icon } from './Icon'
 import type { SnapMode } from '../types'
 
 interface SnapDrawerProps {
@@ -9,10 +10,9 @@ interface SnapDrawerProps {
 }
 
 const modes: { mode: SnapMode; icon: typeof ScanLine; label: string; desc: string }[] = [
-  { mode: 'identify', icon: ScanLine, label: 'Identify', desc: 'What is this?' },
-  { mode: 'spot-issues', icon: AlertCircle, label: 'Spot issues', desc: 'Something look wrong?' },
+  { mode: 'identify', icon: ScanLine, label: 'Identify', desc: 'What is this / spot issues' },
   { mode: 'scan-drawing', icon: FileText, label: 'Scan drawing', desc: 'Read a plan or detail' },
-  { mode: 'measure', icon: Ruler, label: 'Measure & calculate', desc: 'Numbers from a photo' },
+  { mode: 'measure', icon: Ruler, label: 'Measure & calculate', desc: 'Get measurements from a photo' },
 ]
 
 export function SnapDrawer({ open, onClose, onSelectMode }: SnapDrawerProps) {
@@ -42,7 +42,7 @@ export function SnapDrawer({ open, onClose, onSelectMode }: SnapDrawerProps) {
               Choose a mode
             </p>
             <div className="mt-4 flex flex-col gap-2">
-              {modes.map(({ mode, icon: Icon, label, desc }) => (
+              {modes.map(({ mode, icon, label, desc }) => (
                 <button
                   key={mode}
                   type="button"
@@ -52,7 +52,7 @@ export function SnapDrawer({ open, onClose, onSelectMode }: SnapDrawerProps) {
                   }}
                   className="flex min-h-[48px] w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-left"
                 >
-                  <Icon size={20} className="text-white" />
+                  <Icon icon={icon} size={20} className="text-white" />
                   <div>
                     <p className="font-body text-[15px] text-white">{label}</p>
                     <p className="font-body text-[13px] text-[var(--color-text-secondary)]">

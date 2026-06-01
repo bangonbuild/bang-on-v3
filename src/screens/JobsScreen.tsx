@@ -1,4 +1,5 @@
-import { Briefcase, Plus } from 'lucide-react'
+import { Briefcase, Filter, Plus } from 'lucide-react'
+import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import type { Job, JobFilter } from '../types'
 import { formatRelativeTime } from '../utils/storage'
@@ -25,8 +26,9 @@ export function JobsScreen({
   onJob,
   onNewJob,
 }: JobsScreenProps) {
-  const filtered =
-    filter === 'all' ? jobs : jobs.filter((j) => j.status === filter)
+  const filtered = filter === 'all' ? jobs : jobs.filter((j) => j.status === filter)
+  const showCreateEmpty = filter === 'all' && jobs.length === 0
+  const showFilterEmpty = filtered.length === 0 && !showCreateEmpty
 
   return (
     <div className="relative min-h-full px-4 pb-28 pt-6">
@@ -48,9 +50,9 @@ export function JobsScreen({
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {showCreateEmpty && (
         <div className="mt-20 flex flex-col items-center text-center">
-          <Briefcase size={40} className="text-[var(--color-text-tertiary)]" />
+          <Icon icon={Briefcase} size={40} muted />
           <p className="mt-4 font-body text-white">No jobs yet</p>
           <button
             type="button"
@@ -60,7 +62,19 @@ export function JobsScreen({
             Create your first job →
           </button>
         </div>
-      ) : (
+      )}
+
+      {showFilterEmpty && (
+        <div className="mt-20 flex flex-col items-center text-center">
+          <Icon icon={Filter} size={32} muted />
+          <p className="mt-4 font-body text-[15px] text-[var(--color-text-secondary)]">No jobs here</p>
+          <p className="mt-1 font-body text-[13px] text-[var(--color-text-tertiary)]">
+            Try a different filter
+          </p>
+        </div>
+      )}
+
+      {filtered.length > 0 && (
         <div className="mt-4 flex flex-col gap-2">
           {filtered.map((job) => (
             <div key={job.id} className="relative">
@@ -79,7 +93,7 @@ export function JobsScreen({
         className="fixed bottom-24 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-white"
         aria-label="New job"
       >
-        <Plus size={28} className="text-black" />
+        <Plus size={28} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />
       </button>
     </div>
   )

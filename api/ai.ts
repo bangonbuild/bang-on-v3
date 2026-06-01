@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const BASE_NUDGE_PROMPT = `You are Nudge — the AI assistant inside Bang On, a tool built for Australian tradies on site.
+const BASE_NUDGE_PROMPT = `You are Nudge — the AI assistant inside Bangon, a tool built for Australian tradies on site.
 
 Your job is to help tradies work smarter. You know the building trade inside out — timber framing, concrete, roofing, NCC compliance, AS 1684, AS 3600, fixing schedules, the lot.
 
@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://bang-on.vercel.app',
-        'X-Title': 'Bang On',
+        'X-Title': 'Bangon',
       },
       body: JSON.stringify({
         model: 'anthropic/claude-haiku-4-5',
