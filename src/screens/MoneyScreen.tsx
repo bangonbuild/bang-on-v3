@@ -52,7 +52,7 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScre
       <ScreenTitle>Money</ScreenTitle>
 
       <div className="mt-6 flex flex-col gap-2">
-        <StatCard label="OUTSTANDING" amount={stats.outstanding} color="#FF9500" />
+        <StatCard label="OUTSTANDING" amount={stats.outstanding} color="var(--color-text-primary)" />
         <StatCard label="OVERDUE" amount={stats.overdue} color="#FF3B30" />
         <StatCard label="PAID THIS MONTH" amount={stats.paidThisMonth} color="#34C759" />
       </div>

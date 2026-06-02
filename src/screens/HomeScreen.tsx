@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import { NewsCard } from '../components/NewsCard'
-import { WeatherPill } from '../components/WeatherPill'
+import { WeatherDisplay } from '../components/WeatherDisplay'
 import type { Job } from '../types'
 import { NAV_PB } from '../utils/layout'
 
@@ -18,7 +18,7 @@ const TAGLINES = [
 
 interface HomeScreenProps {
   jobs: Job[]
-  weather: { temp: number | null; rainChance: number; loading: boolean }
+  weather: { temp: number | null; description: string; rainChance: number; loading: boolean }
   onWeatherClick: () => void
   onSnap: () => void
   onSpeak: () => void
@@ -49,45 +49,48 @@ export function HomeScreen({
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display text-[28px] font-bold text-[var(--color-text-primary)]">Bang On</h1>
-          <div className="relative mt-1 h-5 overflow-hidden">
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={taglineIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6 }}
-                className="font-display text-[13px] text-[var(--color-text-secondary)]"
-              >
-                {TAGLINES[taglineIndex]}
-              </motion.p>
-            </AnimatePresence>
-          </div>
-          <div className="mt-2">
-            <WeatherPill
-              temp={weather.temp}
-              rainChance={weather.rainChance}
-              loading={weather.loading}
-              onClick={onWeatherClick}
+      <header>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display text-[28px] font-bold leading-none text-[var(--color-text-primary)]">
+            Bang On
+          </h1>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex shrink-0 items-center justify-center"
+            aria-label="Settings"
+          >
+            <UserCircle
+              size={28}
+              strokeWidth={2}
+              className="text-[var(--color-text-primary)]"
+              style={{ shapeRendering: 'geometricPrecision' }}
             />
-          </div>
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="flex h-7 w-7 shrink-0 items-center justify-center"
-          aria-label="Settings"
-        >
-          <UserCircle
-            size={28}
-            strokeWidth={2}
-            className="text-[var(--color-text-primary)]"
-            style={{ shapeRendering: 'geometricPrecision' }}
+        <div className="relative mt-1 h-5 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={taglineIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              className="font-display text-[13px] text-[var(--color-text-secondary)]"
+            >
+              {TAGLINES[taglineIndex]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+        <div className="mt-2">
+          <WeatherDisplay
+            temp={weather.temp}
+            description={weather.description}
+            rainChance={weather.rainChance}
+            loading={weather.loading}
+            onClick={onWeatherClick}
           />
-        </button>
+        </div>
       </header>
 
       <div className="mt-10 grid grid-cols-2 gap-2">
