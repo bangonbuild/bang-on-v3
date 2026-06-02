@@ -5,6 +5,7 @@ import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
 import { StatusBadge } from '../components/StatusBadge'
 import { sendChatMessage } from '../services/aiService'
 import type { Job, Profile, TimelineEntry } from '../types'
+import type { ShowToastFn } from '../hooks/useToast'
 import { NAV_PB } from '../utils/layout'
 import { formatRelativeTime } from '../utils/storage'
 
@@ -21,7 +22,7 @@ interface JobDetailScreenProps {
   onAddPhoto: (content: string, imageUrl: string) => void
   onUpdateEntry: (entryId: string, updates: Partial<TimelineEntry>) => void
   onOpenDoc: (entry: TimelineEntry) => void
-  showToast: (msg: string) => void
+  showToast: ShowToastFn
 }
 
 type PhotoStep = 'idle' | 'capture' | 'preview'
@@ -158,7 +159,7 @@ export function JobDetailScreen({
         </div>
         <button
           type="button"
-          onClick={() => showToast('Map view coming soon.')}
+          onClick={() => showToast('Map view coming soon.', 'info')}
           className="flex min-h-[100px] min-w-0 flex-[0.45] flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
         >
           {/* TODO: wire Google Maps or Mapbox with address from job data */}

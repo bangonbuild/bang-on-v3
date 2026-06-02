@@ -4,6 +4,7 @@ import { ChatBubble } from '../components/ChatBubble'
 import { Icon } from '../components/Icon'
 import { sendChatMessage, mapFetchError } from '../services/aiService'
 import type { ChatMessage, Job, PendingChat, Profile } from '../types'
+import type { ShowToastFn } from '../hooks/useToast'
 import { buildJobContext } from '../utils/jobHelpers'
 import { NAV_BOTTOM } from '../utils/layout'
 import { STORAGE_KEYS } from '../utils/storage'
@@ -13,7 +14,7 @@ interface NudgeScreenProps {
   profile: Profile
   onBack: () => void
   onSaveChat: (messages: ChatMessage[], jobId?: string) => void
-  showToast: (msg: string) => void
+  showToast: ShowToastFn
 }
 
 function firstName(fullName: string): string {
@@ -69,12 +70,14 @@ export function NudgeScreen({
           { role: 'assistant', content: reply, timestamp: Date.now() },
         ])
       } catch (err) {
-        setError(mapFetchError(err))
+        const msg = mapFetchError(err)
+        setError(msg)
+        showToast(msg, 'error')
       } finally {
         setLoading(false)
       }
     },
-    [job, loading, profile.trade],
+    [job, loading, profile.trade, showToast],
   )
 
   useEffect(() => {
@@ -186,7 +189,7 @@ export function NudgeScreen({
           />
           <button
             type="button"
-            onClick={() => showToast('Voice input coming soon.')}
+            onClick={() => showToast('Voice input coming soon.', 'info')}
             className="flex min-h-[48px] min-w-[48px] items-center justify-center"
           >
             <Icon icon={Mic} size={22} muted />

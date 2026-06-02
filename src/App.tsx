@@ -55,7 +55,7 @@ export default function App() {
     useJobs()
   const { profile, payment, setProfile, setPayment } = useProfile()
   const { saveChat, clearChats } = useRecentChats()
-  const { showToast, toastMessage, toastVisible } = useToast()
+  const { showToast, toastMessage, toastType, toastVisible } = useToast()
   const weather = useWeather()
   const { theme, setTheme } = useTheme()
   const {
@@ -118,7 +118,7 @@ export default function App() {
   }
 
   const handleSpeak = () => {
-    showToast('Voice input coming soon.')
+    showToast('Voice input coming soon.', 'info')
   }
 
   const saveDocToMoney = useCallback(
@@ -132,17 +132,6 @@ export default function App() {
     },
     [addFromDocument, getJob],
   )
-
-  const saveQuoteToJob = (jobId: string, doc: GeneratedDocument) => {
-    addTimelineEntry(jobId, {
-      type: doc.type,
-      content: serializeDocument(doc),
-      amount: doc.total,
-    })
-    saveDocToMoney(doc, jobId)
-    showToast('Saved to job timeline.')
-    goToJobDetail(jobId)
-  }
 
   const openDocFromTimeline = (jobId: string, entry: TimelineEntry) => {
     const parsed = parseDocumentFromEntry(entry.content)
@@ -222,7 +211,7 @@ export default function App() {
             onMeasure={() => setOverlay({ type: 'measure' })}
             onPhotoReport={() => setOverlay({ type: 'photo-report' })}
             onOpenPhotoReport={(id) => setOverlay({ type: 'photo-report', reportId: id })}
-            onComingSoon={() => showToast("Coming soon — we're working on it.")}
+            onComingSoon={() => showToast("Coming soon — we're working on it.", 'info')}
             onSuggest={() => setOverlay({ type: 'suggest-tool' })}
           />
         )
@@ -300,10 +289,14 @@ export default function App() {
           onQuote={() => setOverlay({ type: 'quote', docType: 'quote', jobId: job.id })}
           onInvoice={() => setOverlay({ type: 'quote', docType: 'invoice', jobId: job.id })}
           onPhotoReport={() => setOverlay({ type: 'photo-report', jobId: job.id })}
-          onAddNote={(content) => addTimelineEntry(job.id, { type: 'note', content })}
-          onAddPhoto={(content, imageUrl) =>
+          onAddNote={(content) => {
+            addTimelineEntry(job.id, { type: 'note', content })
+            showToast('Note added.', 'success')
+          }}
+          onAddPhoto={(content, imageUrl) => {
             addTimelineEntry(job.id, { type: 'photo', content, imageUrl })
-          }
+            showToast('Photo saved.', 'success')
+          }}
           onUpdateEntry={(entryId, updates) =>
             updateTimelineEntry(job.id, entryId, updates)
           }
@@ -322,6 +315,7 @@ export default function App() {
           mode={overlay.mode}
           jobId={overlay.jobId}
           profile={profile}
+          showToast={showToast}
           onBack={() => {
             if (overlay.jobId) goToJobDetail(overlay.jobId)
             else closeOverlay()
@@ -352,9 +346,11 @@ export default function App() {
           onSave={(data) => {
             if (existing) {
               updateJob(existing.id, data)
+              showToast('Changes saved.', 'success')
               goToJobDetail(existing.id)
             } else {
               const created = addJob(data)
+              showToast('Job created.', 'success')
               goToJobDetail(created.id)
             }
           }}
@@ -377,7 +373,19 @@ export default function App() {
           onClose={closeQuote}
           onSaveToJob={
             overlay.jobId && !overlay.entryId && !overlay.moneyRecordId
-              ? (doc) => saveQuoteToJob(overlay.jobId!, doc)
+              ? (doc) => {
+                  addTimelineEntry(overlay.jobId!, {
+                    type: doc.type,
+                    content: serializeDocument(doc),
+                    amount: doc.total,
+                  })
+                  saveDocToMoney(doc, overlay.jobId)
+                  showToast(
+                    doc.type === 'quote' ? 'Quote saved.' : 'Invoice saved.',
+                    'success',
+                  )
+                  goToJobDetail(overlay.jobId!)
+                }
               : undefined
           }
           showToast={showToast}
@@ -394,7 +402,7 @@ export default function App() {
           onUpdateMoney={(id, doc) => updateFromDocument(id, doc)}
           onDeleteMoney={(id) => {
             deleteRecord(id)
-            showToast('Deleted.')
+            showToast('Deleted.', 'success')
             closeOverlay()
           }}
           onMarkPaid={(id) => markPaid(id)}
@@ -414,7 +422,7 @@ export default function App() {
             overlay.jobId && overlay.entryId
               ? (entryId) => {
                   deleteTimelineEntry(overlay.jobId!, entryId)
-                  showToast('Removed from timeline.')
+                  showToast('Removed from timeline.', 'success')
                   goToJobDetail(overlay.jobId!)
                 }
               : undefined
@@ -439,20 +447,23 @@ export default function App() {
               photoData,
             })
           }
-          onSaveToJob={
-            overlay.jobId
-              ? (reportId) => {
-                  addTimelineEntry(overlay.jobId!, {
-                    type: 'photo-report',
-                    content: reportId,
-                  })
-                  goToJobDetail(overlay.jobId!)
-                }
-              : undefined
-          }
+          onSaveComplete={(reportId) => {
+            if (overlay.jobId) {
+              addTimelineEntry(overlay.jobId, {
+                type: 'photo-report',
+                content: reportId,
+              })
+              showToast('Report saved.', 'success')
+              setOverlay({ type: 'job-detail', jobId: overlay.jobId })
+            } else {
+              showToast('Report saved.', 'success')
+              setOverlay({ type: 'none' })
+              setTab('toolbox')
+            }
+          }}
           onDeleteReport={(id) => {
             deleteReport(id)
-            showToast('Photo report deleted.')
+            showToast('Photo report deleted.', 'success')
             closeOverlay()
           }}
           showToast={showToast}
@@ -475,7 +486,7 @@ export default function App() {
             closeOverlay()
           }}
           onSubmit={() => {
-            showToast("Thanks — we'll add it to the backlog.")
+            showToast("Thanks — we'll add it to the backlog.", 'success')
             setTab('toolbox')
             closeOverlay()
           }}
@@ -546,7 +557,7 @@ export default function App() {
               onNudge={() => setOverlay({ type: 'nudge' })}
             />
           )}
-          <Toast message={toastMessage} visible={toastVisible} />
+          <Toast message={toastMessage} type={toastType} visible={toastVisible} />
         </motion.div>
       )}
 

@@ -5,6 +5,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { Icon } from '../components/Icon'
 import type { PaymentDetails, Profile, Teammate } from '../types'
 import type { Theme } from '../hooks/useTheme'
+import type { ShowToastFn } from '../hooks/useToast'
 import { NAV_PB } from '../utils/layout'
 import { generateId, loadJson, saveJson, STORAGE_KEYS } from '../utils/storage'
 
@@ -23,7 +24,7 @@ interface SettingsScreenProps {
   payment: PaymentDetails
   setPayment: Dispatch<SetStateAction<PaymentDetails>>
   onClearChats: () => void
-  showToast: (msg: string) => void
+  showToast: ShowToastFn
   theme: Theme
   setTheme: (theme: Theme) => void
   onBack: () => void
@@ -87,7 +88,7 @@ export function SettingsScreen({
     ])
     setTeammateName('')
     setTeammatePhone('')
-    showToast("Linked — they'll show up in your team.")
+    showToast('Teammate linked.', 'success')
   }
 
   return (
@@ -171,6 +172,7 @@ export function SettingsScreen({
             onClick={() => {
               setProfile(draftProfile)
               setProfileEditing(false)
+              showToast('Profile saved.', 'success')
             }}
             className="min-h-[48px] rounded-xl bg-white font-body font-medium text-black"
           >
@@ -242,6 +244,7 @@ export function SettingsScreen({
             onClick={() => {
               setPayment(draftPayment)
               setPaymentEditing(false)
+              showToast('Payment details saved.', 'success')
             }}
             className="min-h-[48px] rounded-xl bg-white font-body font-medium text-black"
           >
@@ -346,7 +349,10 @@ export function SettingsScreen({
       <button
         type="button"
         onClick={() => {
-          if (window.confirm('Clear all recent chats?')) onClearChats()
+          if (window.confirm('Clear all recent chats?')) {
+            onClearChats()
+            showToast('Chats cleared.', 'success')
+          }
         }}
         className="mt-2 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] font-body text-[var(--color-text-primary)]"
       >

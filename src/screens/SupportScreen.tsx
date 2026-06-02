@@ -2,12 +2,13 @@ import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { ScreenTitle } from '../components/ScreenTitle'
 import type { Profile } from '../types'
+import type { ShowToastFn } from '../hooks/useToast'
 import { NAV_PB } from '../utils/layout'
 
 interface SupportScreenProps {
   profile: Profile
   onBack: () => void
-  showToast: (msg: string) => void
+  showToast: ShowToastFn
 }
 
 export function SupportScreen({ profile, onBack, showToast }: SupportScreenProps) {
@@ -21,9 +22,9 @@ export function SupportScreen({ profile, onBack, showToast }: SupportScreenProps
   const handleSend = () => {
     if (!message.trim()) return
     // TODO: wire to support email or helpdesk system
-    showToast("Message sent — we'll be in touch soon.")
+    showToast("Message sent — we'll be in touch soon.", 'info')
     setMessage('')
-    onBack()
+    window.setTimeout(() => onBack(), 1500)
   }
 
   return (

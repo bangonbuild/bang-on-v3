@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { analyseImage, mapFetchError } from '../services/aiService'
 import type { Profile, SnapMode } from '../types'
+import type { ShowToastFn } from '../hooks/useToast'
 import { NAV_PB } from '../utils/layout'
 import { encodeImage, saveJson, STORAGE_KEYS } from '../utils/storage'
 
@@ -12,6 +13,7 @@ interface SnapScreenProps {
   mode: SnapMode
   jobId?: string
   profile: Profile
+  showToast: ShowToastFn
   onBack: () => void
   onNavigateToNudge: () => void
   onAddToJob?: (analysis: string, imageUrl: string) => void
@@ -29,6 +31,7 @@ export function SnapScreen({
   mode,
   jobId,
   profile,
+  showToast,
   onBack,
   onNavigateToNudge,
   onAddToJob,
@@ -74,7 +77,9 @@ export function SnapScreen({
       setSuggestions(result.suggestions)
       setStep('results')
     } catch (err) {
-      setError(mapFetchError(err))
+      const msg = mapFetchError(err)
+      setError(msg)
+      showToast(msg, 'error')
       setStep('preview')
     }
   }

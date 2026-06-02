@@ -49,8 +49,8 @@ export function HomeScreen({
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <header className="flex items-start justify-between gap-3">
-        <div>
+      <header className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
           <h1 className="font-display text-[28px] font-bold text-[var(--color-text-primary)]">Bang On</h1>
           <div className="relative mt-1 h-5 overflow-hidden">
             <AnimatePresence mode="wait">
@@ -68,8 +68,18 @@ export function HomeScreen({
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <button type="button" onClick={onOpenSettings} className="min-h-[48px] min-w-[48px]">
-            <UserCircle size={28} strokeWidth={2} className="text-[var(--color-text-primary)]" style={{ shapeRendering: 'geometricPrecision' }} />
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex h-7 w-7 items-center justify-center"
+            aria-label="Settings"
+          >
+            <UserCircle
+              size={28}
+              strokeWidth={2}
+              className="text-[var(--color-text-primary)]"
+              style={{ shapeRendering: 'geometricPrecision' }}
+            />
           </button>
           <WeatherPill
             temp={weather.temp}

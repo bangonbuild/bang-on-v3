@@ -10,6 +10,7 @@ import { parseQuoteFromAi } from '../utils/documentParser'
 import { buildJobContext } from '../utils/jobHelpers'
 import { NAV_PB } from '../utils/layout'
 import { formatDate } from '../utils/storage'
+import type { ShowToastFn } from '../hooks/useToast'
 
 type InputMode = 'describe' | 'build'
 
@@ -20,7 +21,7 @@ interface QuoteGeneratorProps {
   payment: PaymentDetails
   onClose: () => void
   onSaveToJob?: (doc: GeneratedDocument) => void
-  showToast: (msg: string) => void
+  showToast: ShowToastFn
   editEntryId?: string
   initialDoc?: GeneratedDocument
   onUpdateEntry?: (entryId: string, doc: GeneratedDocument) => void
@@ -80,6 +81,7 @@ export function QuoteGenerator({
     initialDoc ?? (moneyRecord ? moneyRecordToDoc(moneyRecord) : null),
   )
   const [error, setError] = useState<string | null>(null)
+  const [fromGeneration, setFromGeneration] = useState(false)
 
   const updateLine = (index: number, field: keyof QuoteLineItem, value: string | number) => {
     setLineItems((items) =>
@@ -120,7 +122,10 @@ export function QuoteGenerator({
 
   const handleBuildGenerate = () => {
     const built = buildDocFromLines()
-    if (built) setDoc(built)
+    if (built) {
+      setDoc(built)
+      setFromGeneration(true)
+    }
   }
 
   const handleDescribeGenerate = async () => {
@@ -150,8 +155,11 @@ Keep it practical for a tradie. Australian English.`
       )
       if (type === 'invoice') parsed.number = invoiceNumber
       setDoc(parsed)
+      setFromGeneration(true)
     } catch (err) {
-      setError(mapFetchError(err))
+      const msg = mapFetchError(err)
+      setError(msg)
+      showToast(msg, 'error')
     } finally {
       setLoading(false)
     }
@@ -161,13 +169,13 @@ Keep it practical for a tradie. Australian English.`
     if (!doc) return
     if (editEntryId && onUpdateEntry) {
       onUpdateEntry(editEntryId, doc)
-      showToast('Changes saved.')
+      showToast('Changes saved.', 'success')
       onClose()
       return
     }
     if (moneyRecord && onUpdateMoney) {
       onUpdateMoney(moneyRecord.id, doc)
-      showToast('Changes saved.')
+      showToast('Changes saved.', 'success')
       setMoneyEdit(false)
     }
   }
@@ -185,30 +193,43 @@ Keep it practical for a tradie. Australian English.`
     }
   }
 
+  const isFirstGen = Boolean(doc && !isTimelineEdit && !isMoneyView && fromGeneration)
+
+  const handleBackToEdit = () => {
+    if (!doc) return
+    setLineItems(doc.lineItems.length ? [...doc.lineItems] : [emptyLine()])
+    setIncludeGst(doc.includeGst)
+    if (doc.dueDate) setDueDate(doc.dueDate)
+    setInputMode('build')
+    setDoc(null)
+  }
+
+  const handleFirstGenSave = () => {
+    if (!doc) return
+    if (onSaveToJob) {
+      onSaveToJob(doc)
+    } else {
+      onSaveMoney?.(doc)
+      showToast(doc.type === 'quote' ? 'Quote saved.' : 'Invoice saved.', 'success')
+    }
+    setFromGeneration(false)
+    onClose()
+  }
+
   if (doc) {
     const editing = isTimelineEdit || (isMoneyView && moneyEdit)
     return (
       <QuoteOverlay
         doc={doc}
         payment={payment}
-        onClose={() => {
-          if (onSaveMoney && !moneyRecord && !editEntryId && !isTimelineEdit && !onSaveToJob) {
-            onSaveMoney(doc)
-          }
-          onClose()
-        }}
-        onShare={() => showToast('Sharing coming soon.')}
-        onDownload={() => showToast('Download coming soon.')}
-        onSave={() => {
-          if (onSaveToJob) {
-            onSaveToJob(doc)
-          } else if (onSaveMoney) {
-            onSaveMoney(doc)
-          }
-          onClose()
-        }}
-        showSave={!!job && !!onSaveToJob && !editing && !isMoneyView}
+        onClose={onClose}
+        onShare={() => showToast('Sharing coming soon.', 'info')}
+        onDownload={() => showToast('Download coming soon.', 'info')}
+        onSave={isFirstGen ? handleFirstGenSave : undefined}
+        showSave={false}
         editMode={editing}
+        firstGenMode={isFirstGen}
+        onBackToEdit={isFirstGen ? handleBackToEdit : undefined}
         moneyMode={isMoneyView && !moneyEdit}
         onDocChange={editing ? setDoc : undefined}
         onSaveChanges={handleSaveChanges}
@@ -218,7 +239,7 @@ Keep it practical for a tradie. Australian English.`
           isMoneyView && moneyRecord?.type === 'invoice' && onMarkPaid
             ? () => {
                 onMarkPaid(moneyRecord.id)
-                showToast('Marked as paid.')
+                showToast('Marked as paid.', 'success')
                 onClose()
               }
             : undefined
@@ -227,7 +248,7 @@ Keep it practical for a tradie. Australian English.`
           isMoneyView && moneyRecord?.type === 'quote' && onConvertToInvoice
             ? () => {
                 onConvertToInvoice(moneyRecord.id)
-                showToast('Quote converted to invoice.')
+                showToast('Converted to invoice.', 'success')
                 onClose()
               }
             : undefined

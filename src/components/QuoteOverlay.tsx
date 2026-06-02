@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { ChevronLeft, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Toggle } from './Toggle'
 import type { GeneratedDocument, PaymentDetails, QuoteLineItem } from '../types'
@@ -20,6 +20,8 @@ interface QuoteOverlayProps {
   onMarkPaid?: () => void
   onConvertToInvoice?: () => void
   moneyMode?: boolean
+  firstGenMode?: boolean
+  onBackToEdit?: () => void
 }
 
 function recalcDoc(doc: GeneratedDocument, lineItems: QuoteLineItem[]): GeneratedDocument {
@@ -47,6 +49,8 @@ export function QuoteOverlay({
   onMarkPaid,
   onConvertToInvoice,
   moneyMode = false,
+  firstGenMode = false,
+  onBackToEdit,
 }: QuoteOverlayProps) {
   const title = doc.type === 'quote' ? 'Quote' : 'Invoice'
 
@@ -193,6 +197,36 @@ export function QuoteOverlay({
                 className="min-h-[48px] w-full rounded-xl border border-black/20 font-body text-sm text-red-600"
               >
                 Delete {title.toLowerCase()}
+              </button>
+            )}
+          </>
+        ) : firstGenMode ? (
+          <>
+            {onBackToEdit && (
+              <button
+                type="button"
+                onClick={onBackToEdit}
+                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-sm text-white"
+              >
+                <ChevronLeft size={18} />
+                Edit
+              </button>
+            )}
+            <div className="flex gap-2">
+              <button type="button" onClick={onShare} className={actionBtnClass}>
+                Share with client
+              </button>
+              <button type="button" onClick={onDownload} className={actionBtnClass}>
+                Download
+              </button>
+            </div>
+            {onSave && (
+              <button
+                type="button"
+                onClick={onSave}
+                className="min-h-[48px] w-full rounded-xl bg-black font-body text-sm text-white"
+              >
+                Save
               </button>
             )}
           </>

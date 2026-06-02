@@ -5,6 +5,7 @@ import { generateDocument, mapFetchError } from '../services/aiService'
 import type { Job, PhotoReportResult, Profile, SavedPhotoReport } from '../types'
 import { NAV_PB } from '../utils/layout'
 import { encodeImage, formatDate } from '../utils/storage'
+import type { ShowToastFn } from '../hooks/useToast'
 
 const actionBtnClass =
   'flex-1 min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-sm text-[var(--color-text-primary)]'
@@ -14,10 +15,10 @@ interface PhotoReportGeneratorProps {
   profile: Profile
   savedReport?: SavedPhotoReport
   onClose: () => void
-  onSaveToJob?: (reportId: string) => void
   onSaveReport?: (result: PhotoReportResult, photoData: string[]) => SavedPhotoReport
+  onSaveComplete?: (reportId: string) => void
   onDeleteReport?: (id: string) => void
-  showToast: (msg: string) => void
+  showToast: ShowToastFn
 }
 
 export function PhotoReportGenerator({
@@ -25,8 +26,8 @@ export function PhotoReportGenerator({
   profile,
   savedReport,
   onClose,
-  onSaveToJob,
   onSaveReport,
+  onSaveComplete,
   onDeleteReport,
   showToast,
 }: PhotoReportGeneratorProps) {
@@ -88,22 +89,19 @@ Photos count: ${photos.length}`
         summary,
       })
     } catch (err) {
-      setError(mapFetchError(err))
+      const msg = mapFetchError(err)
+      setError(msg)
+      showToast(msg, 'error')
     } finally {
       setLoading(false)
     }
   }
 
   const handleSave = () => {
-    if (!report || !onSaveReport) return
+    if (!report || !onSaveReport || !onSaveComplete) return
     const photoData = photos.length > 0 ? photos.map((p) => p.base64) : report.photos.map((p) => p.imageUrl)
     const saved = onSaveReport(report, photoData)
-    if (onSaveToJob) {
-      onSaveToJob(saved.id)
-    } else {
-      showToast('Photo report saved.')
-    }
-    onClose()
+    onSaveComplete(saved.id)
   }
 
   const handleDelete = () => {
@@ -141,10 +139,10 @@ Photos count: ${photos.length}`
         </div>
         <div className="fixed bottom-0 left-0 right-0 flex flex-col gap-2 border-t border-black/10 bg-white p-4">
           <div className="flex gap-2">
-            <button type="button" onClick={() => showToast('Sharing coming soon.')} className={actionBtnClass}>
+            <button type="button" onClick={() => showToast('Sharing coming soon.', 'info')} className={actionBtnClass}>
               Share with client
             </button>
-            <button type="button" onClick={() => showToast('Download coming soon.')} className={actionBtnClass}>
+            <button type="button" onClick={() => showToast('Download coming soon.', 'info')} className={actionBtnClass}>
               Download
             </button>
           </div>
@@ -156,23 +154,13 @@ Photos count: ${photos.length}`
             >
               Delete
             </button>
-          ) : job && onSaveToJob && onSaveReport ? (
+          ) : onSaveReport && onSaveComplete ? (
             <button
               type="button"
               onClick={handleSave}
               className="min-h-[48px] w-full rounded-xl bg-black font-body text-sm text-white"
             >
-              Save to job
-            </button>
-          ) : onSaveReport ? (
-            <button
-              type="button"
-              onClick={() => {
-                handleSave()
-              }}
-              className="min-h-[48px] w-full rounded-xl bg-black font-body text-sm text-white"
-            >
-              Save report
+              {job ? 'Save to job' : 'Save report'}
             </button>
           ) : (
             <button
