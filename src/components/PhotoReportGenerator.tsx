@@ -2,13 +2,40 @@ import { Loader2, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useRef, useState } from 'react'
 import { generateDocument, mapFetchError } from '../services/aiService'
-import type { Job, PhotoReportResult, Profile, SavedPhotoReport } from '../types'
+import type { Job, PaymentDetails, PhotoReportResult, Profile, SavedPhotoReport } from '../types'
 import { NAV_PB } from '../utils/layout'
-import { encodeImage, formatDate } from '../utils/storage'
+import { encodeImage, formatDate, loadJson, STORAGE_KEYS } from '../utils/storage'
 import type { ShowToastFn } from '../hooks/useToast'
 
 const actionBtnClass =
   'flex-1 min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-sm text-[var(--color-text-primary)]'
+
+const emptyPayment: PaymentDetails = {
+  businessName: '',
+  abn: '',
+  bsb: '',
+  account: '',
+  logo: '',
+}
+
+function ReportBranding() {
+  const payment = loadJson<PaymentDetails>(STORAGE_KEYS.payment, emptyPayment)
+  if (payment.logo) {
+    return (
+      <img
+        src={payment.logo}
+        alt={payment.businessName || 'Business logo'}
+        className="max-h-12 w-auto object-contain object-left"
+      />
+    )
+  }
+  if (payment.businessName.trim()) {
+    return (
+      <span className="font-display text-[16px] font-bold text-black">{payment.businessName}</span>
+    )
+  }
+  return <span className="font-display text-[16px] font-bold text-black">Bang On</span>
+}
 
 interface PhotoReportGeneratorProps {
   job?: Job
@@ -124,7 +151,8 @@ Photos count: ${photos.length}`
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 pb-32">
-          <h1 className="font-display text-2xl font-bold">{report.title}</h1>
+          <ReportBranding />
+          <h1 className="font-display mt-4 text-2xl font-bold">{report.title}</h1>
           <p className="mt-2 font-body text-sm">{report.date}</p>
           {report.jobName && <p className="font-body text-sm">{report.jobName}</p>}
           <div className="mt-6 flex flex-col gap-4">

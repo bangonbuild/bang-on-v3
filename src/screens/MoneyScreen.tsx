@@ -51,10 +51,10 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScre
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <ScreenTitle>Money</ScreenTitle>
 
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex flex-col gap-2">
         <StatCard label="OUTSTANDING" amount={stats.outstanding} color="#FF9500" />
         <StatCard label="OVERDUE" amount={stats.overdue} color="#FF3B30" />
-        <StatCard label="PAID / MONTH" amount={stats.paidThisMonth} color="#34C759" />
+        <StatCard label="PAID THIS MONTH" amount={stats.paidThisMonth} color="#34C759" />
       </div>
 
       <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
@@ -92,11 +92,14 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScre
 
 function StatCard({ label, amount, color }: { label: string; amount: number; color: string }) {
   return (
-    <div className="min-w-0 flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <p className="font-display text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)] whitespace-nowrap">
+    <div className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+      <p className="font-display text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
         {label}
       </p>
-      <p className="font-display mt-2 text-[28px] font-bold leading-none" style={{ color }}>
+      <p
+        className="font-display mt-2 text-[32px] font-bold leading-none whitespace-nowrap"
+        style={{ color }}
+      >
         {formatMoney(amount)}
       </p>
     </div>

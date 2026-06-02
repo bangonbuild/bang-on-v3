@@ -49,7 +49,7 @@ export function HomeScreen({
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <header className="flex items-start gap-3">
+      <header className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-[28px] font-bold text-[var(--color-text-primary)]">Bang On</h1>
           <div className="relative mt-1 h-5 overflow-hidden">
@@ -66,28 +66,28 @@ export function HomeScreen({
               </motion.p>
             </AnimatePresence>
           </div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            className="flex h-7 w-7 items-center justify-center"
-            aria-label="Settings"
-          >
-            <UserCircle
-              size={28}
-              strokeWidth={2}
-              className="text-[var(--color-text-primary)]"
-              style={{ shapeRendering: 'geometricPrecision' }}
+          <div className="mt-2">
+            <WeatherPill
+              temp={weather.temp}
+              rainChance={weather.rainChance}
+              loading={weather.loading}
+              onClick={onWeatherClick}
             />
-          </button>
-          <WeatherPill
-            temp={weather.temp}
-            rainChance={weather.rainChance}
-            loading={weather.loading}
-            onClick={onWeatherClick}
-          />
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className="flex h-7 w-7 shrink-0 items-center justify-center"
+          aria-label="Settings"
+        >
+          <UserCircle
+            size={28}
+            strokeWidth={2}
+            className="text-[var(--color-text-primary)]"
+            style={{ shapeRendering: 'geometricPrecision' }}
+          />
+        </button>
       </header>
 
       <div className="mt-10 grid grid-cols-2 gap-2">
