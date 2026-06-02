@@ -32,7 +32,7 @@ export function SuggestToolScreen({ onBack, onSubmit }: SuggestToolScreenProps) 
         <h1 className="font-display text-xl font-bold text-white">Suggest a tool</h1>
       </header>
       <p className="mt-2 font-body text-sm text-[var(--color-text-secondary)]">
-        We&apos;re building Bangon with tradies. Tell us what you need.
+        We&apos;re building Bang On with tradies. Tell us what you need.
       </p>
 
       <div className="mt-6 flex flex-1 flex-col gap-4 overflow-y-auto">

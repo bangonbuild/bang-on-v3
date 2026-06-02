@@ -1,4 +1,5 @@
-import { X } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
+import { ScreenTitle } from '../components/ScreenTitle'
 import { useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { Icon } from '../components/Icon'
@@ -25,10 +26,12 @@ interface SettingsScreenProps {
   showToast: (msg: string) => void
   theme: Theme
   setTheme: (theme: Theme) => void
+  onBack: () => void
+  onSupport: () => void
 }
 
 function hasProfileData(p: Profile) {
-  return Boolean(p.name.trim() || p.phone.trim())
+  return Boolean(p.name.trim() || p.phone.trim() || p.email?.trim())
 }
 
 function hasPaymentData(p: PaymentDetails) {
@@ -44,6 +47,8 @@ export function SettingsScreen({
   showToast,
   theme,
   setTheme,
+  onBack,
+  onSupport,
 }: SettingsScreenProps) {
   const [profileEditing, setProfileEditing] = useState(!hasProfileData(profile))
   const [paymentEditing, setPaymentEditing] = useState(!hasPaymentData(payment))
@@ -87,7 +92,12 @@ export function SettingsScreen({
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <h1 className="font-display text-2xl font-bold text-white">Settings</h1>
+      <header className="flex items-center gap-3">
+        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
+          <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
+        </button>
+        <ScreenTitle>Settings</ScreenTitle>
+      </header>
 
       <SectionHeader
         title="Profile"
@@ -114,6 +124,16 @@ export function SettingsScreen({
               type="tel"
               value={draftProfile.phone}
               onChange={(e) => setDraftProfile({ ...draftProfile, phone: e.target.value })}
+              className={inputClass}
+            />
+          </label>
+          <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+            Email
+            <input
+              type="email"
+              value={draftProfile.email ?? ''}
+              onChange={(e) => setDraftProfile({ ...draftProfile, email: e.target.value })}
+              placeholder="you@email.com"
               className={inputClass}
             />
           </label>
@@ -162,6 +182,7 @@ export function SettingsScreen({
           rows={[
             ['Full name', profile.name || '—'],
             ['Phone', profile.phone || '—'],
+            ['Email', profile.email || '—'],
             ['Trade', profile.trade],
           ]}
           note="Your trade helps Nudge give better answers"
@@ -327,11 +348,18 @@ export function SettingsScreen({
         onClick={() => {
           if (window.confirm('Clear all recent chats?')) onClearChats()
         }}
-        className="mt-2 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] font-body text-white"
+        className="mt-2 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] font-body text-[var(--color-text-primary)]"
       >
         Clear recent chats
       </button>
-      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">Bangon v0.3.0</p>
+      <button
+        type="button"
+        onClick={onSupport}
+        className="mt-2 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] font-body text-[var(--color-text-primary)]"
+      >
+        Support
+      </button>
+      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">Bang On v0.3.3</p>
     </div>
   )
 }

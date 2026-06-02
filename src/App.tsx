@@ -8,6 +8,8 @@ import { SplashScreen } from './components/SplashScreen'
 import { Toast } from './components/Toast'
 import { WeatherModal } from './components/WeatherModal'
 import { useJobs } from './hooks/useJobs'
+import { useMoney } from './hooks/useMoney'
+import { usePhotoReports } from './hooks/usePhotoReports'
 import { useProfile } from './hooks/useProfile'
 import { useRecentChats } from './hooks/useRecentChats'
 import { useToast } from './hooks/useToast'
@@ -18,12 +20,14 @@ import { JobDetailScreen } from './screens/JobDetailScreen'
 import { JobFormScreen } from './screens/JobFormScreen'
 import { JobsScreen } from './screens/JobsScreen'
 import { MeasureScreen } from './screens/MeasureScreen'
+import { MoneyScreen } from './screens/MoneyScreen'
 import { NudgeScreen } from './screens/NudgeScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { SnapScreen } from './screens/SnapScreen'
 import { SuggestToolScreen } from './screens/SuggestToolScreen'
+import { SupportScreen } from './screens/SupportScreen'
 import { ToolboxScreen } from './screens/ToolboxScreen'
-import type { GeneratedDocument, JobFilter, PhotoReport, SnapMode, TabId, TimelineEntry } from './types'
+import type { GeneratedDocument, JobFilter, SnapMode, TabId, TimelineEntry } from './types'
 import { parseDocumentFromEntry, serializeDocument } from './utils/storage'
 
 type Overlay =
@@ -32,10 +36,12 @@ type Overlay =
   | { type: 'snap'; mode: SnapMode; jobId?: string }
   | { type: 'job-detail'; jobId: string }
   | { type: 'job-form'; jobId?: string; returnToJobId?: string }
-  | { type: 'quote'; docType: 'quote' | 'invoice'; jobId?: string; entryId?: string }
-  | { type: 'photo-report'; jobId?: string }
+  | { type: 'quote'; docType: 'quote' | 'invoice'; jobId?: string; entryId?: string; moneyRecordId?: string }
+  | { type: 'photo-report'; jobId?: string; reportId?: string }
   | { type: 'measure' }
   | { type: 'suggest-tool' }
+  | { type: 'settings' }
+  | { type: 'support' }
 
 export default function App() {
   const [splash, setSplash] = useState(true)
@@ -52,6 +58,18 @@ export default function App() {
   const { showToast, toastMessage, toastVisible } = useToast()
   const weather = useWeather()
   const { theme, setTheme } = useTheme()
+  const {
+    stats,
+    invoices,
+    quotes,
+    addFromDocument,
+    updateFromDocument,
+    deleteRecord,
+    markPaid,
+    convertQuoteToInvoice,
+    getRecord,
+  } = useMoney()
+  const { reports: photoReports, addFromResult, deleteReport, getReport } = usePhotoReports()
 
   useEffect(() => {
     const t = window.setTimeout(() => setSplash(false), 500)
@@ -64,8 +82,13 @@ export default function App() {
 
   const closeOverlay = useCallback(() => setOverlay({ type: 'none' }), [])
 
+  const closeSettings = useCallback(() => {
+    setOverlay({ type: 'none' })
+    setTab('home')
+  }, [])
+
   const closeQuote = useCallback(() => {
-    if (overlay.type === 'quote' && overlay.jobId) {
+    if (overlay.type === 'quote' && overlay.jobId && !overlay.moneyRecordId) {
       goToJobDetail(overlay.jobId)
     } else {
       closeOverlay()
@@ -73,7 +96,7 @@ export default function App() {
   }, [overlay, goToJobDetail, closeOverlay])
 
   const closePhotoReport = useCallback(() => {
-    if (overlay.type === 'photo-report' && overlay.jobId) {
+    if (overlay.type === 'photo-report' && overlay.jobId && !overlay.reportId) {
       goToJobDetail(overlay.jobId)
     } else {
       closeOverlay()
@@ -82,7 +105,7 @@ export default function App() {
 
   const handleTabChange = useCallback(
     (newTab: TabId) => {
-      if (overlay.type !== 'none') {
+      if (overlay.type !== 'none' && overlay.type !== 'nudge') {
         setOverlay({ type: 'none' })
       }
       setTab(newTab)
@@ -98,12 +121,25 @@ export default function App() {
     showToast('Voice input coming soon.')
   }
 
+  const saveDocToMoney = useCallback(
+    (doc: GeneratedDocument, jobId?: string) => {
+      const job = jobId ? getJob(jobId) : undefined
+      addFromDocument(doc, {
+        jobId,
+        jobName: job?.name,
+        client: job?.client ?? doc.clientName,
+      })
+    },
+    [addFromDocument, getJob],
+  )
+
   const saveQuoteToJob = (jobId: string, doc: GeneratedDocument) => {
     addTimelineEntry(jobId, {
       type: doc.type,
       content: serializeDocument(doc),
       amount: doc.total,
     })
+    saveDocToMoney(doc, jobId)
     showToast('Saved to job timeline.')
     goToJobDetail(jobId)
   }
@@ -126,9 +162,16 @@ export default function App() {
     overlay.type === 'quote' ||
     overlay.type === 'photo-report' ||
     overlay.type === 'measure' ||
-    overlay.type === 'suggest-tool'
+    overlay.type === 'suggest-tool' ||
+    overlay.type === 'settings' ||
+    overlay.type === 'support'
 
-  const showMainContent = overlay.type === 'none' || overlay.type === 'nudge' || overlay.type === 'job-detail'
+  const showMainContent =
+    overlay.type === 'none' ||
+    overlay.type === 'nudge' ||
+    overlay.type === 'job-detail' ||
+    overlay.type === 'settings' ||
+    overlay.type === 'support'
 
   const renderTab = () => {
     switch (tab) {
@@ -142,6 +185,7 @@ export default function App() {
             onSpeak={handleSpeak}
             onJob={(id) => goToJobDetail(id)}
             onNewJob={() => setOverlay({ type: 'job-form' })}
+            onOpenSettings={() => setOverlay({ type: 'settings' })}
           />
         )
       case 'jobs':
@@ -154,28 +198,32 @@ export default function App() {
             onNewJob={() => setOverlay({ type: 'job-form' })}
           />
         )
+      case 'money':
+        return (
+          <MoneyScreen
+            stats={stats}
+            invoices={invoices}
+            quotes={quotes}
+            onOpenRecord={(record) =>
+              setOverlay({
+                type: 'quote',
+                docType: record.type,
+                moneyRecordId: record.id,
+              })
+            }
+          />
+        )
       case 'toolbox':
         return (
           <ToolboxScreen
+            photoReports={photoReports}
             onQuote={() => setOverlay({ type: 'quote', docType: 'quote' })}
             onInvoice={() => setOverlay({ type: 'quote', docType: 'invoice' })}
             onMeasure={() => setOverlay({ type: 'measure' })}
             onPhotoReport={() => setOverlay({ type: 'photo-report' })}
+            onOpenPhotoReport={(id) => setOverlay({ type: 'photo-report', reportId: id })}
             onComingSoon={() => showToast("Coming soon — we're working on it.")}
             onSuggest={() => setOverlay({ type: 'suggest-tool' })}
-          />
-        )
-      case 'settings':
-        return (
-          <SettingsScreen
-            profile={profile}
-            setProfile={setProfile}
-            payment={payment}
-            setPayment={setPayment}
-            onClearChats={clearChats}
-            showToast={showToast}
-            theme={theme}
-            setTheme={setTheme}
           />
         )
       default:
@@ -196,6 +244,47 @@ export default function App() {
         />
       )
     }
+    if (overlay.type === 'settings') {
+      return (
+        <motion.div
+          initial={{ x: '100%', opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: '100%', opacity: 0 }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          className="h-full overflow-y-auto"
+        >
+          <SettingsScreen
+            profile={profile}
+            setProfile={setProfile}
+            payment={payment}
+            setPayment={setPayment}
+            onClearChats={clearChats}
+            showToast={showToast}
+            theme={theme}
+            setTheme={setTheme}
+            onBack={closeSettings}
+            onSupport={() => setOverlay({ type: 'support' })}
+          />
+        </motion.div>
+      )
+    }
+    if (overlay.type === 'support') {
+      return (
+        <motion.div
+          initial={{ x: '100%', opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: '100%', opacity: 0 }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          className="h-full overflow-y-auto"
+        >
+          <SupportScreen
+            profile={profile}
+            onBack={() => setOverlay({ type: 'settings' })}
+            showToast={showToast}
+          />
+        </motion.div>
+      )
+    }
     if (overlay.type === 'job-detail') {
       const job = getJob(overlay.jobId)
       if (!job) return null
@@ -210,6 +299,7 @@ export default function App() {
           onNudge={() => setOverlay({ type: 'nudge', jobId: job.id })}
           onQuote={() => setOverlay({ type: 'quote', docType: 'quote', jobId: job.id })}
           onInvoice={() => setOverlay({ type: 'quote', docType: 'invoice', jobId: job.id })}
+          onPhotoReport={() => setOverlay({ type: 'photo-report', jobId: job.id })}
           onAddNote={(content) => addTimelineEntry(job.id, { type: 'note', content })}
           onAddPhoto={(content, imageUrl) =>
             addTimelineEntry(job.id, { type: 'photo', content, imageUrl })
@@ -277,6 +367,7 @@ export default function App() {
         ? job?.timeline.find((e) => e.id === overlay.entryId)
         : undefined
       const initialDoc = entry ? parseDocumentFromEntry(entry.content) : undefined
+      const moneyRecord = overlay.moneyRecordId ? getRecord(overlay.moneyRecordId) : undefined
       return (
         <QuoteGenerator
           type={overlay.docType}
@@ -285,13 +376,29 @@ export default function App() {
           payment={payment}
           onClose={closeQuote}
           onSaveToJob={
-            overlay.jobId && !overlay.entryId
+            overlay.jobId && !overlay.entryId && !overlay.moneyRecordId
               ? (doc) => saveQuoteToJob(overlay.jobId!, doc)
               : undefined
           }
           showToast={showToast}
           editEntryId={overlay.entryId}
           initialDoc={initialDoc ?? undefined}
+          moneyRecord={moneyRecord}
+          onSaveMoney={(doc) => {
+            if (moneyRecord) {
+              updateFromDocument(moneyRecord.id, doc)
+            } else {
+              saveDocToMoney(doc, overlay.jobId)
+            }
+          }}
+          onUpdateMoney={(id, doc) => updateFromDocument(id, doc)}
+          onDeleteMoney={(id) => {
+            deleteRecord(id)
+            showToast('Deleted.')
+            closeOverlay()
+          }}
+          onMarkPaid={(id) => markPaid(id)}
+          onConvertToInvoice={(id) => convertQuoteToInvoice(id)}
           onUpdateEntry={
             overlay.jobId && overlay.entryId
               ? (entryId, doc) => {
@@ -299,6 +406,7 @@ export default function App() {
                     content: serializeDocument(doc),
                     amount: doc.total,
                   })
+                  if (moneyRecord) updateFromDocument(moneyRecord.id, doc)
                 }
               : undefined
           }
@@ -316,19 +424,37 @@ export default function App() {
     }
     if (overlay.type === 'photo-report') {
       const job = overlay.jobId ? getJob(overlay.jobId) : undefined
+      const savedReport = overlay.reportId ? getReport(overlay.reportId) : undefined
       return (
         <PhotoReportGenerator
           job={job}
           profile={profile}
+          savedReport={savedReport}
           onClose={closePhotoReport}
+          onSaveReport={(result, photoData) =>
+            addFromResult(result, {
+              jobId: overlay.jobId,
+              jobName: job?.name,
+              client: job?.client,
+              photoData,
+            })
+          }
           onSaveToJob={
             overlay.jobId
-              ? (report: PhotoReport) => {
-                  addTimelineEntry(overlay.jobId!, { type: 'photo', content: report.summary })
+              ? (reportId) => {
+                  addTimelineEntry(overlay.jobId!, {
+                    type: 'photo-report',
+                    content: reportId,
+                  })
                   goToJobDetail(overlay.jobId!)
                 }
               : undefined
           }
+          onDeleteReport={(id) => {
+            deleteReport(id)
+            showToast('Photo report deleted.')
+            closeOverlay()
+          }}
           showToast={showToast}
         />
       )
@@ -359,6 +485,17 @@ export default function App() {
     return null
   }
 
+  const overlaySlide =
+    overlay.type === 'job-detail' ||
+    overlay.type === 'settings' ||
+    overlay.type === 'support'
+
+  const overlayKey =
+    overlay.type +
+    ('jobId' in overlay && overlay.jobId ? overlay.jobId : '') +
+    ('moneyRecordId' in overlay && overlay.moneyRecordId ? overlay.moneyRecordId : '') +
+    ('reportId' in overlay && overlay.reportId ? overlay.reportId : '')
+
   return (
     <div className="mx-auto flex h-full max-w-lg flex-col bg-[var(--color-bg)]">
       <AnimatePresence>{splash && <SplashScreen visible={splash} />}</AnimatePresence>
@@ -386,12 +523,12 @@ export default function App() {
                   </motion.div>
                 ) : (
                   <motion.div
-                    key={overlay.type + ('jobId' in overlay ? overlay.jobId ?? '' : '')}
-                    initial={overlay.type === 'job-detail' ? { x: '100%', opacity: 0 } : { opacity: 0 }}
-                    animate={overlay.type === 'job-detail' ? { x: 0, opacity: 1 } : { opacity: 1 }}
-                    exit={overlay.type === 'job-detail' ? { x: '100%', opacity: 0 } : { opacity: 0 }}
-                    transition={{ duration: overlay.type === 'job-detail' ? 0.25 : 0.15, ease: 'easeInOut' }}
-                    className="flex h-full min-h-0 flex-col"
+                    key={overlayKey}
+                    initial={overlaySlide ? { x: '100%', opacity: 0 } : { opacity: 0 }}
+                    animate={overlaySlide ? { x: 0, opacity: 1 } : { opacity: 1 }}
+                    exit={overlaySlide ? { x: '100%', opacity: 0 } : { opacity: 0 }}
+                    transition={{ duration: overlaySlide ? 0.25 : 0.15, ease: 'easeInOut' }}
+                    className="flex h-full min-h-0 flex-col overflow-y-auto"
                   >
                     {renderOverlay()}
                   </motion.div>

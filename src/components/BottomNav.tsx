@@ -1,4 +1,4 @@
-import { Briefcase, House, MessageCircle, SlidersHorizontal, Wrench } from 'lucide-react'
+import { Banknote, Briefcase, House, MessageCircle, Wrench } from 'lucide-react'
 import { Icon } from './Icon'
 import type { TabId } from '../types'
 
@@ -14,8 +14,8 @@ const leftTabs: { id: TabId; label: string; icon: typeof House }[] = [
 ]
 
 const rightTabs: { id: TabId; label: string; icon: typeof House }[] = [
+  { id: 'money', label: 'Money', icon: Banknote },
   { id: 'toolbox', label: 'Toolbox', icon: Wrench },
-  { id: 'settings', label: 'Settings', icon: SlidersHorizontal },
 ]
 
 function TabButton({
@@ -37,9 +37,11 @@ function TabButton({
       onClick={() => onChange(id)}
       className="flex min-h-[48px] flex-1 flex-col items-center justify-center gap-1"
     >
-      <Icon icon={icon} size={22} className={active ? 'text-white' : 'text-white'} muted={!active} />
+      <Icon icon={icon} size={22} className={active ? 'text-[var(--color-text-primary)]' : ''} muted={!active} />
       <span
-        className={`font-display text-[11px] ${active ? 'text-white' : 'text-white opacity-[0.35]'}`}
+        className={`font-display text-[11px] ${
+          active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-primary)] opacity-[0.35]'
+        }`}
       >
         {label}
       </span>
@@ -61,7 +63,12 @@ export function BottomNav({ active, onChange, onNudge }: BottomNavProps) {
             aria-label="Ask Nudge"
             className="nudge-fab flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full border border-white/10 bg-white active:bg-[#F0F0F0]"
           >
-            <MessageCircle size={24} strokeWidth={2} className="nudge-fab-icon text-black" style={{ shapeRendering: 'geometricPrecision' }} />
+            <MessageCircle
+              size={24}
+              strokeWidth={2}
+              className="nudge-fab-icon text-black"
+              style={{ shapeRendering: 'geometricPrecision' }}
+            />
           </button>
         </div>
         {rightTabs.map((tab) => (

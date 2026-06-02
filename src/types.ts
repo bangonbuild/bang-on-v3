@@ -1,6 +1,6 @@
 export type JobStatus = 'active' | 'on-hold' | 'complete'
 
-export type TimelineEntryType = 'note' | 'photo' | 'quote' | 'invoice' | 'nudge'
+export type TimelineEntryType = 'note' | 'photo' | 'quote' | 'invoice' | 'nudge' | 'photo-report'
 
 export interface TimelineEntry {
   id: string
@@ -16,6 +16,7 @@ export interface Job {
   id: string
   name: string
   client: string
+  email?: string
   phone: string
   address: string
   status: JobStatus
@@ -42,6 +43,7 @@ export interface Chat {
 export interface Profile {
   name: string
   phone: string
+  email?: string
   trade: string
 }
 
@@ -55,9 +57,36 @@ export interface PaymentDetails {
 
 export type SnapMode = 'identify' | 'scan-drawing' | 'measure'
 
-export type TabId = 'home' | 'jobs' | 'toolbox' | 'settings'
+export type TabId = 'home' | 'jobs' | 'money' | 'toolbox'
 
 export type JobFilter = 'all' | 'active' | 'on-hold' | 'complete'
+
+export type MoneyStatus = 'draft' | 'sent' | 'paid' | 'overdue'
+
+export interface QuoteLineItem {
+  description: string
+  quantity: number
+  unitPrice: number
+  total: number
+}
+
+export interface MoneyRecord {
+  id: string
+  type: 'quote' | 'invoice'
+  invoiceNumber?: string
+  client?: string
+  jobId?: string
+  jobName?: string
+  lineItems: QuoteLineItem[]
+  includeGst: boolean
+  subtotal: number
+  gstAmount: number
+  total: number
+  status: MoneyStatus
+  dueDate?: string
+  createdAt: number
+  updatedAt: number
+}
 
 export interface PendingChat {
   analysis: string
@@ -72,13 +101,6 @@ export interface Teammate {
   id: string
   name: string
   phone: string
-}
-
-export interface QuoteLineItem {
-  description: string
-  quantity: number
-  unitPrice: number
-  total: number
 }
 
 export interface GeneratedDocument {
@@ -101,10 +123,21 @@ export interface PhotoReportPhoto {
   caption: string
 }
 
-export interface PhotoReport {
+export interface PhotoReportResult {
   title: string
   date: string
   jobName?: string
   photos: PhotoReportPhoto[]
   summary: string
+}
+
+export interface SavedPhotoReport {
+  id: string
+  jobId?: string
+  jobName?: string
+  client?: string
+  photos: string[]
+  captions: string[]
+  reportText: string
+  createdAt: number
 }

@@ -9,6 +9,7 @@ interface JobFormScreenProps {
   onSave: (data: {
     name: string
     client: string
+    email?: string
     phone: string
     address: string
     status: JobStatus
@@ -20,6 +21,7 @@ const statuses: JobStatus[] = ['active', 'on-hold', 'complete']
 export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
   const [name, setName] = useState(job?.name ?? '')
   const [client, setClient] = useState(job?.client ?? '')
+  const [email, setEmail] = useState(job?.email ?? '')
   const [phone, setPhone] = useState(job?.phone ?? '')
   const [address, setAddress] = useState(job?.address ?? '')
   const [status, setStatus] = useState<JobStatus>(job?.status ?? 'active')
@@ -30,7 +32,14 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
       setError('Job name, client name, and phone are required.')
       return
     }
-    onSave({ name: name.trim(), client: client.trim(), phone: phone.trim(), address: address.trim(), status })
+    onSave({
+      name: name.trim(),
+      client: client.trim(),
+      email: email.trim() || undefined,
+      phone: phone.trim(),
+      address: address.trim(),
+      status,
+    })
   }
 
   const inputClass =
@@ -55,6 +64,16 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
         <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
           Client name
           <input value={client} onChange={(e) => setClient(e.target.value)} className={inputClass} />
+        </label>
+        <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+          Client email
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="client@email.com"
+            className={inputClass}
+          />
         </label>
         <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
           Client phone

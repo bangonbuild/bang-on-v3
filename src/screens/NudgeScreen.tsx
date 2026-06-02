@@ -149,7 +149,7 @@ export function NudgeScreen({
         {messages.length === 0 && !loading && (
           <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
             <div className="pulse-dot mb-4" />
-            <p className="font-display text-xl text-[var(--color-text-primary)]">Bangon</p>
+            <p className="font-display text-xl text-[var(--color-text-primary)]">Bang On</p>
             <p className="mt-2 font-body text-[15px] text-[var(--color-text-secondary)]">
               {welcomeLine}
             </p>

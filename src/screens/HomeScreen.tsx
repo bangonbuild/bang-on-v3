@@ -1,10 +1,20 @@
-import { Mic, Plus, ScanLine } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Mic, Plus, ScanLine, UserCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import { NewsCard } from '../components/NewsCard'
 import { WeatherPill } from '../components/WeatherPill'
 import type { Job } from '../types'
 import { NAV_PB } from '../utils/layout'
+
+const TAGLINES = [
+  'AI-powered tradie tools.',
+  'A toolbox in your pocket.',
+  'Built for the job.',
+  'Built to save time.',
+  'The smartest tool on site.',
+]
 
 interface HomeScreenProps {
   jobs: Job[]
@@ -14,6 +24,7 @@ interface HomeScreenProps {
   onSpeak: () => void
   onJob: (id: string) => void
   onNewJob: () => void
+  onOpenSettings: () => void
 }
 
 export function HomeScreen({
@@ -24,24 +35,49 @@ export function HomeScreen({
   onSpeak,
   onJob,
   onNewJob,
+  onOpenSettings,
 }: HomeScreenProps) {
+  const [taglineIndex, setTaglineIndex] = useState(0)
   const activeJobs = jobs.filter((j) => j.status !== 'complete')
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      setTaglineIndex((i) => (i + 1) % TAGLINES.length)
+    }, 5000)
+    return () => window.clearInterval(t)
+  }, [])
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <header className="flex items-start justify-between">
+      <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-bold text-white">Bangon</h1>
-          <p className="mt-1 font-display text-[13px] text-[var(--color-text-secondary)]">
-            Built for the job.
-          </p>
+          <h1 className="font-display text-[28px] font-bold text-[var(--color-text-primary)]">Bang On</h1>
+          <div className="relative mt-1 h-5 overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={taglineIndex}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                className="font-display text-[13px] text-[var(--color-text-secondary)]"
+              >
+                {TAGLINES[taglineIndex]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
         </div>
-        <WeatherPill
-          temp={weather.temp}
-          rainChance={weather.rainChance}
-          loading={weather.loading}
-          onClick={onWeatherClick}
-        />
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <button type="button" onClick={onOpenSettings} className="min-h-[48px] min-w-[48px]">
+            <UserCircle size={28} strokeWidth={2} className="text-[var(--color-text-primary)]" style={{ shapeRendering: 'geometricPrecision' }} />
+          </button>
+          <WeatherPill
+            temp={weather.temp}
+            rainChance={weather.rainChance}
+            loading={weather.loading}
+            onClick={onWeatherClick}
+          />
+        </div>
       </header>
 
       <div className="mt-10 grid grid-cols-2 gap-2">
@@ -76,7 +112,7 @@ export function HomeScreen({
         >
           <Icon icon={Plus} size={24} muted />
           <div className="text-left">
-            <p className="font-body font-medium text-white">Start your first job</p>
+            <p className="font-body font-medium text-[var(--color-text-primary)]">Start your first job</p>
             <p className="font-body text-[13px] text-[var(--color-text-secondary)]">
               Tap to create a job
             </p>

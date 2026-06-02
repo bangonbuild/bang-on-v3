@@ -26,6 +26,8 @@ export const STORAGE_KEYS = {
   pendingChat: 'bang-on-pending-chat',
   team: 'bang-on-team',
   theme: 'bang-on-theme',
+  money: 'bang-on-money',
+  photoReports: 'bang-on-photo-reports',
 } as const
 
 export function parseDocumentFromEntry(content: string): GeneratedDocument | null {

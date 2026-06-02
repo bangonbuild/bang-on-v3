@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Camera, ChevronRight, FileText, MessageCircle, ReceiptText, StickyNote } from 'lucide-react'
+import { Camera, ChevronRight, FileText, ImageIcon, MessageCircle, ReceiptText, StickyNote } from 'lucide-react'
 import { Icon } from './Icon'
 
-export type JobAction = 'nudge' | 'note' | 'photo' | 'quote' | 'invoice'
+export type JobAction = 'nudge' | 'note' | 'photo' | 'quote' | 'invoice' | 'photo-report'
 
 interface JobActionDrawerProps {
   open: boolean
@@ -16,6 +16,7 @@ const actions: { action: JobAction; icon: typeof MessageCircle; label: string }[
   { action: 'photo', icon: Camera, label: 'Add photo' },
   { action: 'quote', icon: ReceiptText, label: 'Quote' },
   { action: 'invoice', icon: FileText, label: 'Invoice' },
+  { action: 'photo-report', icon: ImageIcon, label: 'Photo report' },
 ]
 
 export function JobActionDrawer({ open, onClose, onSelect }: JobActionDrawerProps) {
@@ -51,8 +52,8 @@ export function JobActionDrawer({ open, onClose, onSelect }: JobActionDrawerProp
                   }}
                   className="flex min-h-[48px] w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 text-left"
                 >
-                  <Icon icon={icon} size={20} className="text-white" />
-                  <span className="flex-1 font-body text-[15px] text-white">{label}</span>
+                  <Icon icon={icon} size={20} />
+                  <span className="flex-1 font-body text-[15px] text-[var(--color-text-primary)]">{label}</span>
                   <Icon icon={ChevronRight} size={18} muted />
                 </button>
               ))}

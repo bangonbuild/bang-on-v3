@@ -4,7 +4,8 @@ import { Icon } from './Icon'
 import { QuoteOverlay } from './QuoteOverlay'
 import { Toggle } from './Toggle'
 import { generateDocument, mapFetchError } from '../services/aiService'
-import type { GeneratedDocument, Job, PaymentDetails, Profile, QuoteLineItem } from '../types'
+import type { GeneratedDocument, Job, MoneyRecord, PaymentDetails, Profile, QuoteLineItem } from '../types'
+import { moneyRecordToDoc } from '../utils/moneyHelpers'
 import { parseQuoteFromAi } from '../utils/documentParser'
 import { buildJobContext } from '../utils/jobHelpers'
 import { NAV_PB } from '../utils/layout'
@@ -24,6 +25,12 @@ interface QuoteGeneratorProps {
   initialDoc?: GeneratedDocument
   onUpdateEntry?: (entryId: string, doc: GeneratedDocument) => void
   onDeleteEntry?: (entryId: string) => void
+  moneyRecord?: MoneyRecord
+  onSaveMoney?: (doc: GeneratedDocument) => void
+  onUpdateMoney?: (id: string, doc: GeneratedDocument) => void
+  onDeleteMoney?: (id: string) => void
+  onMarkPaid?: (id: string) => void
+  onConvertToInvoice?: (id: string) => void
 }
 
 const emptyLine = (): QuoteLineItem => ({
@@ -48,9 +55,17 @@ export function QuoteGenerator({
   initialDoc,
   onUpdateEntry,
   onDeleteEntry,
+  moneyRecord,
+  onSaveMoney,
+  onUpdateMoney,
+  onDeleteMoney,
+  onMarkPaid,
+  onConvertToInvoice,
 }: QuoteGeneratorProps) {
-  const isEdit = Boolean(editEntryId && initialDoc)
-  const [inputMode, setInputMode] = useState<InputMode>(isEdit ? 'build' : 'describe')
+  const [moneyEdit, setMoneyEdit] = useState(false)
+  const isTimelineEdit = Boolean(editEntryId && initialDoc)
+  const isMoneyView = Boolean(moneyRecord && !isTimelineEdit)
+  const [inputMode, setInputMode] = useState<InputMode>(isTimelineEdit ? 'build' : 'describe')
   const [scope, setScope] = useState('')
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>(
     initialDoc?.lineItems?.length ? initialDoc.lineItems : [emptyLine()],
@@ -61,7 +76,9 @@ export function QuoteGenerator({
     initialDoc?.number ?? `INV-${Date.now().toString().slice(-6)}`,
   )
   const [loading, setLoading] = useState(false)
-  const [doc, setDoc] = useState<GeneratedDocument | null>(initialDoc ?? null)
+  const [doc, setDoc] = useState<GeneratedDocument | null>(
+    initialDoc ?? (moneyRecord ? moneyRecordToDoc(moneyRecord) : null),
+  )
   const [error, setError] = useState<string | null>(null)
 
   const updateLine = (index: number, field: keyof QuoteLineItem, value: string | number) => {
@@ -141,35 +158,80 @@ Keep it practical for a tradie. Australian English.`
   }
 
   const handleSaveChanges = () => {
-    if (!editEntryId || !onUpdateEntry || !doc) return
-    onUpdateEntry(editEntryId, doc)
-    showToast('Changes saved.')
-    onClose()
+    if (!doc) return
+    if (editEntryId && onUpdateEntry) {
+      onUpdateEntry(editEntryId, doc)
+      showToast('Changes saved.')
+      onClose()
+      return
+    }
+    if (moneyRecord && onUpdateMoney) {
+      onUpdateMoney(moneyRecord.id, doc)
+      showToast('Changes saved.')
+      setMoneyEdit(false)
+    }
   }
 
   const handleDelete = () => {
-    if (!editEntryId || !onDeleteEntry) return
     if (!window.confirm("Are you sure? This can't be undone.")) return
-    onDeleteEntry(editEntryId)
-    onClose()
+    if (editEntryId && onDeleteEntry) {
+      onDeleteEntry(editEntryId)
+      onClose()
+      return
+    }
+    if (moneyRecord && onDeleteMoney) {
+      onDeleteMoney(moneyRecord.id)
+      onClose()
+    }
   }
 
   if (doc) {
+    const editing = isTimelineEdit || (isMoneyView && moneyEdit)
     return (
       <QuoteOverlay
         doc={doc}
         payment={payment}
-        onClose={onClose}
-        onShare={() => showToast('Coming soon — sharing is on the way.')}
-        onSave={() => {
-          onSaveToJob?.(doc)
+        onClose={() => {
+          if (onSaveMoney && !moneyRecord && !editEntryId && !isTimelineEdit && !onSaveToJob) {
+            onSaveMoney(doc)
+          }
           onClose()
         }}
-        showSave={!!job && !!onSaveToJob && !isEdit}
-        editMode={isEdit}
-        onDocChange={isEdit ? setDoc : undefined}
+        onShare={() => showToast('Sharing coming soon.')}
+        onDownload={() => showToast('Download coming soon.')}
+        onSave={() => {
+          if (onSaveToJob) {
+            onSaveToJob(doc)
+          } else if (onSaveMoney) {
+            onSaveMoney(doc)
+          }
+          onClose()
+        }}
+        showSave={!!job && !!onSaveToJob && !editing && !isMoneyView}
+        editMode={editing}
+        moneyMode={isMoneyView && !moneyEdit}
+        onDocChange={editing ? setDoc : undefined}
         onSaveChanges={handleSaveChanges}
-        onDelete={isEdit ? handleDelete : undefined}
+        onDelete={editing || isMoneyView ? handleDelete : undefined}
+        onEdit={isMoneyView ? () => setMoneyEdit(true) : undefined}
+        onMarkPaid={
+          isMoneyView && moneyRecord?.type === 'invoice' && onMarkPaid
+            ? () => {
+                onMarkPaid(moneyRecord.id)
+                showToast('Marked as paid.')
+                onClose()
+              }
+            : undefined
+        }
+        onConvertToInvoice={
+          isMoneyView && moneyRecord?.type === 'quote' && onConvertToInvoice
+            ? () => {
+                onConvertToInvoice(moneyRecord.id)
+                showToast('Quote converted to invoice.')
+                onClose()
+              }
+            : undefined
+        }
       />
     )
   }
@@ -180,10 +242,10 @@ Keep it practical for a tradie. Australian English.`
         Cancel
       </button>
       <h2 className="font-display mt-4 text-xl font-bold text-[var(--color-text-primary)]">
-        {isEdit ? `Edit ${type}` : `Generate ${type === 'quote' ? 'a quote' : 'an invoice'}`}
+        {isTimelineEdit ? `Edit ${type}` : `Generate ${type === 'quote' ? 'a quote' : 'an invoice'}`}
       </h2>
 
-      {!isEdit && (
+      {!isTimelineEdit && (
         <div className="mt-4 flex rounded bg-[var(--color-surface-2)] p-1">
           {(['describe', 'build'] as const).map((mode) => (
             <button
@@ -202,7 +264,7 @@ Keep it practical for a tradie. Australian English.`
         </div>
       )}
 
-      {inputMode === 'describe' && !isEdit ? (
+      {inputMode === 'describe' && !isTimelineEdit ? (
         <>
           <textarea
             value={scope}
@@ -272,7 +334,7 @@ Keep it practical for a tradie. Australian English.`
         </div>
       )}
 
-      {type === 'invoice' && !isEdit && inputMode === 'describe' && (
+      {type === 'invoice' && !isTimelineEdit && inputMode === 'describe' && (
         <>
           <label className="mt-4 font-body text-[13px] text-[var(--color-text-secondary)]">
             Due date
@@ -294,12 +356,12 @@ Keep it practical for a tradie. Australian English.`
         type="button"
         disabled={
           loading ||
-          (inputMode === 'describe' && !isEdit
+          (inputMode === 'describe' && !isTimelineEdit
             ? !scope.trim()
             : lineItems.every((l) => !l.description.trim()))
         }
         onClick={() =>
-          void (inputMode === 'describe' && !isEdit ? handleDescribeGenerate() : handleBuildGenerate())
+          void (inputMode === 'describe' && !isTimelineEdit ? handleDescribeGenerate() : handleBuildGenerate())
         }
         className="mt-6 flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white font-body font-medium text-black disabled:opacity-50"
       >
@@ -308,7 +370,7 @@ Keep it practical for a tradie. Australian English.`
             <Loader2 size={20} className="animate-spin text-black" />
             Nudge is writing your {type}...
           </>
-        ) : isEdit ? (
+        ) : isTimelineEdit ? (
           'Open document'
         ) : (
           'Generate'

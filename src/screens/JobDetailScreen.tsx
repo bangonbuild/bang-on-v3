@@ -16,6 +16,7 @@ interface JobDetailScreenProps {
   onNudge: () => void
   onQuote: () => void
   onInvoice: () => void
+  onPhotoReport: () => void
   onAddNote: (content: string) => void
   onAddPhoto: (content: string, imageUrl: string) => void
   onUpdateEntry: (entryId: string, updates: Partial<TimelineEntry>) => void
@@ -33,6 +34,7 @@ export function JobDetailScreen({
   onNudge,
   onQuote,
   onInvoice,
+  onPhotoReport,
   onAddNote,
   onAddPhoto,
   onUpdateEntry,
@@ -69,6 +71,9 @@ export function JobDetailScreen({
         break
       case 'invoice':
         onInvoice()
+        break
+      case 'photo-report':
+        onPhotoReport()
         break
     }
   }
@@ -137,6 +142,9 @@ export function JobDetailScreen({
           <p className="mt-2 font-body text-sm text-[var(--color-text-secondary)]">{job.client}</p>
           {job.phone && (
             <p className="font-body text-sm text-[var(--color-text-secondary)]">{job.phone}</p>
+          )}
+          {job.email && (
+            <p className="font-body text-sm text-[var(--color-text-secondary)]">{job.email}</p>
           )}
           {job.address && (
             <p className="font-body text-[13px] text-[var(--color-text-tertiary)]">{job.address}</p>

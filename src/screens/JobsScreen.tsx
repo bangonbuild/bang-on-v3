@@ -1,5 +1,6 @@
 import { Briefcase, Filter, Plus } from 'lucide-react'
 import { Icon } from '../components/Icon'
+import { ScreenTitle } from '../components/ScreenTitle'
 import { JobCard } from '../components/JobCard'
 import type { Job, JobFilter } from '../types'
 import { NAV_PB } from '../utils/layout'
@@ -33,7 +34,7 @@ export function JobsScreen({
 
   return (
     <div className={`relative min-h-full px-4 pt-6 ${NAV_PB}`}>
-      <h1 className="font-display text-2xl font-bold text-white">Jobs</h1>
+      <ScreenTitle>Jobs</ScreenTitle>
       <div className="mt-4 flex flex-wrap gap-2">
         {filters.map((f) => (
           <button
