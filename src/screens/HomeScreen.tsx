@@ -4,6 +4,7 @@ import { JobCard } from '../components/JobCard'
 import { NewsCard } from '../components/NewsCard'
 import { WeatherPill } from '../components/WeatherPill'
 import type { Job } from '../types'
+import { NAV_PB } from '../utils/layout'
 
 interface HomeScreenProps {
   jobs: Job[]
@@ -27,7 +28,7 @@ export function HomeScreen({
   const activeJobs = jobs.filter((j) => j.status !== 'complete')
 
   return (
-    <div className="px-4 pb-24 pt-6">
+    <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-start justify-between">
         <div>
           <h1 className="font-display text-[28px] font-bold text-white">Bangon</h1>
@@ -47,20 +48,20 @@ export function HomeScreen({
         <button
           type="button"
           onClick={onSnap}
-          className="rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
+          className="snap-speak-card rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
         >
-          <ScanLine size={24} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />
-          <p className="font-display mt-3 text-lg font-bold text-black">SNAP</p>
-          <p className="mt-1 font-body text-[13px] text-black/60">Photo → site advice</p>
+          <ScanLine size={24} strokeWidth={2} className="snap-speak-icon text-black" style={{ shapeRendering: 'geometricPrecision' }} />
+          <p className="snap-speak-title font-display mt-3 text-lg font-bold text-black">SNAP</p>
+          <p className="snap-speak-subtitle mt-1 font-body text-[13px] text-black/60">Photo → site advice</p>
         </button>
         <button
           type="button"
           onClick={onSpeak}
-          className="rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
+          className="snap-speak-card rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
         >
-          <Mic size={24} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />
-          <p className="font-display mt-3 text-lg font-bold text-black">SPEAK</p>
-          <p className="mt-1 font-body text-[13px] text-black/60">Ask with your voice</p>
+          <Mic size={24} strokeWidth={2} className="snap-speak-icon text-black" style={{ shapeRendering: 'geometricPrecision' }} />
+          <p className="snap-speak-title font-display mt-3 text-lg font-bold text-black">SPEAK</p>
+          <p className="snap-speak-subtitle mt-1 font-body text-[13px] text-black/60">Ask with your voice</p>
         </button>
       </div>
 

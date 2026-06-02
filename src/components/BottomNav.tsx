@@ -59,9 +59,9 @@ export function BottomNav({ active, onChange, onNudge }: BottomNavProps) {
             type="button"
             onClick={onNudge}
             aria-label="Ask Nudge"
-            className="flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full border border-white/10 bg-white active:bg-[#F0F0F0]"
+            className="nudge-fab flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full border border-white/10 bg-white active:bg-[#F0F0F0]"
           >
-            <MessageCircle size={24} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />
+            <MessageCircle size={24} strokeWidth={2} className="nudge-fab-icon text-black" style={{ shapeRendering: 'geometricPrecision' }} />
           </button>
         </div>
         {rightTabs.map((tab) => (

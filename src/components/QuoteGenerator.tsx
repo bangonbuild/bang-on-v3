@@ -7,6 +7,7 @@ import { generateDocument, mapFetchError } from '../services/aiService'
 import type { GeneratedDocument, Job, PaymentDetails, Profile, QuoteLineItem } from '../types'
 import { parseQuoteFromAi } from '../utils/documentParser'
 import { buildJobContext } from '../utils/jobHelpers'
+import { NAV_PB } from '../utils/layout'
 import { formatDate } from '../utils/storage'
 
 type InputMode = 'describe' | 'build'
@@ -19,6 +20,10 @@ interface QuoteGeneratorProps {
   onClose: () => void
   onSaveToJob?: (doc: GeneratedDocument) => void
   showToast: (msg: string) => void
+  editEntryId?: string
+  initialDoc?: GeneratedDocument
+  onUpdateEntry?: (entryId: string, doc: GeneratedDocument) => void
+  onDeleteEntry?: (entryId: string) => void
 }
 
 const emptyLine = (): QuoteLineItem => ({
@@ -28,6 +33,9 @@ const emptyLine = (): QuoteLineItem => ({
   total: 0,
 })
 
+const fieldInputClass =
+  'w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 font-body text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]'
+
 export function QuoteGenerator({
   type,
   job,
@@ -36,15 +44,24 @@ export function QuoteGenerator({
   onClose,
   onSaveToJob,
   showToast,
+  editEntryId,
+  initialDoc,
+  onUpdateEntry,
+  onDeleteEntry,
 }: QuoteGeneratorProps) {
-  const [inputMode, setInputMode] = useState<InputMode>('describe')
+  const isEdit = Boolean(editEntryId && initialDoc)
+  const [inputMode, setInputMode] = useState<InputMode>(isEdit ? 'build' : 'describe')
   const [scope, setScope] = useState('')
-  const [lineItems, setLineItems] = useState<QuoteLineItem[]>([emptyLine()])
-  const [includeGst, setIncludeGst] = useState(true)
-  const [dueDate, setDueDate] = useState('')
-  const [invoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`)
+  const [lineItems, setLineItems] = useState<QuoteLineItem[]>(
+    initialDoc?.lineItems?.length ? initialDoc.lineItems : [emptyLine()],
+  )
+  const [includeGst, setIncludeGst] = useState(initialDoc?.includeGst ?? true)
+  const [dueDate, setDueDate] = useState(initialDoc?.dueDate ?? '')
+  const [invoiceNumber] = useState(
+    initialDoc?.number ?? `INV-${Date.now().toString().slice(-6)}`,
+  )
   const [loading, setLoading] = useState(false)
-  const [doc, setDoc] = useState<GeneratedDocument | null>(null)
+  const [doc, setDoc] = useState<GeneratedDocument | null>(initialDoc ?? null)
   const [error, setError] = useState<string | null>(null)
 
   const updateLine = (index: number, field: keyof QuoteLineItem, value: string | number) => {
@@ -64,24 +81,29 @@ export function QuoteGenerator({
   const buildGst = includeGst ? buildSubtotal * 0.1 : 0
   const buildTotal = buildSubtotal + buildGst
 
-  const handleBuildGenerate = () => {
+  const buildDocFromLines = (): GeneratedDocument | null => {
     const valid = lineItems.filter((l) => l.description.trim())
-    if (valid.length === 0) return
-    setDoc({
+    if (valid.length === 0) return null
+    const subtotal = valid.reduce((s, i) => s + i.total, 0)
+    const gst = includeGst ? subtotal * 0.1 : 0
+    return {
       type,
-      number: `${type === 'quote' ? 'Q' : 'INV'}-${Date.now().toString().slice(-6)}`,
-      date: formatDate(),
+      number: initialDoc?.number ?? `${type === 'quote' ? 'Q' : 'INV'}-${Date.now().toString().slice(-6)}`,
+      date: initialDoc?.date ?? formatDate(),
       dueDate: type === 'invoice' ? dueDate || formatDate() : undefined,
-      clientName: job?.client,
-      clientAddress: job?.address,
+      clientName: job?.client ?? initialDoc?.clientName,
+      clientAddress: job?.address ?? initialDoc?.clientAddress,
       lineItems: valid,
-      subtotal: valid.reduce((s, i) => s + i.total, 0),
-      gst: includeGst ? valid.reduce((s, i) => s + i.total, 0) * 0.1 : 0,
-      total: includeGst
-        ? valid.reduce((s, i) => s + i.total, 0) * 1.1
-        : valid.reduce((s, i) => s + i.total, 0),
+      subtotal,
+      gst,
+      total: subtotal + gst,
       includeGst,
-    })
+    }
+  }
+
+  const handleBuildGenerate = () => {
+    const built = buildDocFromLines()
+    if (built) setDoc(built)
   }
 
   const handleDescribeGenerate = async () => {
@@ -118,6 +140,20 @@ Keep it practical for a tradie. Australian English.`
     }
   }
 
+  const handleSaveChanges = () => {
+    if (!editEntryId || !onUpdateEntry || !doc) return
+    onUpdateEntry(editEntryId, doc)
+    showToast('Changes saved.')
+    onClose()
+  }
+
+  const handleDelete = () => {
+    if (!editEntryId || !onDeleteEntry) return
+    if (!window.confirm("Are you sure? This can't be undone.")) return
+    onDeleteEntry(editEntryId)
+    onClose()
+  }
+
   if (doc) {
     return (
       <QuoteOverlay
@@ -129,45 +165,56 @@ Keep it practical for a tradie. Australian English.`
           onSaveToJob?.(doc)
           onClose()
         }}
-        showSave={!!job && !!onSaveToJob}
+        showSave={!!job && !!onSaveToJob && !isEdit}
+        editMode={isEdit}
+        onDocChange={isEdit ? setDoc : undefined}
+        onSaveChanges={handleSaveChanges}
+        onDelete={isEdit ? handleDelete : undefined}
       />
     )
   }
 
   return (
-    <div className="fixed inset-0 z-[85] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-4 pt-6 pb-8">
+    <div className={`fixed inset-0 z-[85] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-4 pt-6 ${NAV_PB}`}>
       <button type="button" onClick={onClose} className="self-start font-body text-[var(--color-text-secondary)]">
         Cancel
       </button>
-      <h2 className="font-display mt-4 text-xl font-bold text-white">
-        Generate {type === 'quote' ? 'a quote' : 'an invoice'}
+      <h2 className="font-display mt-4 text-xl font-bold text-[var(--color-text-primary)]">
+        {isEdit ? `Edit ${type}` : `Generate ${type === 'quote' ? 'a quote' : 'an invoice'}`}
       </h2>
 
-      <div className="mt-4 flex rounded bg-[var(--color-surface-2)] p-1">
-        {(['describe', 'build'] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => setInputMode(mode)}
-            className={`min-h-[36px] flex-1 rounded font-body text-sm capitalize ${
-              inputMode === mode
-                ? 'bg-white text-black'
-                : 'text-[var(--color-text-secondary)]'
-            }`}
-          >
-            {mode === 'describe' ? 'Describe it' : 'Build it'}
-          </button>
-        ))}
-      </div>
+      {!isEdit && (
+        <div className="mt-4 flex rounded bg-[var(--color-surface-2)] p-1">
+          {(['describe', 'build'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setInputMode(mode)}
+              className={`min-h-[36px] flex-1 rounded font-body text-sm capitalize ${
+                inputMode === mode
+                  ? 'bg-white text-black'
+                  : 'text-[var(--color-text-secondary)]'
+              }`}
+            >
+              {mode === 'describe' ? 'Describe it' : 'Build it'}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {inputMode === 'describe' ? (
-        <textarea
-          value={scope}
-          onChange={(e) => setScope(e.target.value)}
-          placeholder="e.g. Supply and fix 180lm of 90x45 pine framing, single storey, includes noggins and top plates"
-          rows={6}
-          className="mt-4 min-h-[120px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 font-body text-white placeholder:text-[var(--color-text-tertiary)]"
-        />
+      {inputMode === 'describe' && !isEdit ? (
+        <>
+          <textarea
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+            placeholder="e.g. Supply and fix 180lm of 90x45 pine framing, single storey, includes noggins and top plates"
+            rows={6}
+            className="mt-4 min-h-[120px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 font-body text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
+          />
+          <div className="mt-4">
+            <Toggle checked={includeGst} onChange={setIncludeGst} label="Include GST" />
+          </div>
+        </>
       ) : (
         <div className="mt-4 flex flex-col gap-3">
           {lineItems.map((line, i) => (
@@ -186,27 +233,27 @@ Keep it practical for a tradie. Australian English.`
                 value={line.description}
                 onChange={(e) => updateLine(i, 'description', e.target.value)}
                 placeholder="Description"
-                className="mb-2 w-full bg-transparent font-body text-sm text-white outline-none"
+                className={`${fieldInputClass} mb-2`}
               />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <input
                   type="number"
                   value={line.quantity || ''}
                   onChange={(e) => updateLine(i, 'quantity', parseFloat(e.target.value) || 0)}
                   placeholder="Qty"
-                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2 font-body text-sm text-white"
+                  className={fieldInputClass}
                 />
                 <input
                   type="number"
                   value={line.unitPrice || ''}
                   onChange={(e) => updateLine(i, 'unitPrice', parseFloat(e.target.value) || 0)}
-                  placeholder="$ Price"
-                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2 font-body text-sm text-white"
+                  placeholder="Unit price ($)"
+                  className={fieldInputClass}
                 />
-                <div className="flex items-center justify-end font-body text-sm text-white">
-                  ${line.total.toFixed(2)}
-                </div>
               </div>
+              <p className="mt-2 text-right font-body text-sm text-[var(--color-text-primary)]">
+                Total: ${line.total.toFixed(2)}
+              </p>
             </div>
           ))}
           <button
@@ -216,7 +263,8 @@ Keep it practical for a tradie. Australian English.`
           >
             + Add line item
           </button>
-          <div className="mt-2 space-y-1 font-body text-sm text-right text-white">
+          <Toggle checked={includeGst} onChange={setIncludeGst} label="Include GST" />
+          <div className="space-y-1 font-body text-sm text-right text-[var(--color-text-primary)]">
             <p>Subtotal: ${buildSubtotal.toFixed(2)}</p>
             {includeGst && <p>GST: ${buildGst.toFixed(2)}</p>}
             <p className="font-display font-bold">Total: ${buildTotal.toFixed(2)}</p>
@@ -224,11 +272,7 @@ Keep it practical for a tradie. Australian English.`
         </div>
       )}
 
-      <div className="mt-4">
-        <Toggle checked={includeGst} onChange={setIncludeGst} label="Include GST" />
-      </div>
-
-      {type === 'invoice' && (
+      {type === 'invoice' && !isEdit && inputMode === 'describe' && (
         <>
           <label className="mt-4 font-body text-[13px] text-[var(--color-text-secondary)]">
             Due date
@@ -236,7 +280,7 @@ Keep it practical for a tradie. Australian English.`
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-white"
+              className="mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-[var(--color-text-primary)]"
             />
           </label>
           <p className="mt-2 font-body text-[13px] text-[var(--color-text-tertiary)]">
@@ -248,8 +292,15 @@ Keep it practical for a tradie. Australian English.`
       {error && <p className="mt-2 text-sm text-[var(--color-danger)]">{error}</p>}
       <button
         type="button"
-        disabled={loading || (inputMode === 'describe' ? !scope.trim() : lineItems.every((l) => !l.description.trim()))}
-        onClick={() => void (inputMode === 'describe' ? handleDescribeGenerate() : handleBuildGenerate())}
+        disabled={
+          loading ||
+          (inputMode === 'describe' && !isEdit
+            ? !scope.trim()
+            : lineItems.every((l) => !l.description.trim()))
+        }
+        onClick={() =>
+          void (inputMode === 'describe' && !isEdit ? handleDescribeGenerate() : handleBuildGenerate())
+        }
         className="mt-6 flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white font-body font-medium text-black disabled:opacity-50"
       >
         {loading ? (
@@ -257,6 +308,8 @@ Keep it practical for a tradie. Australian English.`
             <Loader2 size={20} className="animate-spin text-black" />
             Nudge is writing your {type}...
           </>
+        ) : isEdit ? (
+          'Open document'
         ) : (
           'Generate'
         )}

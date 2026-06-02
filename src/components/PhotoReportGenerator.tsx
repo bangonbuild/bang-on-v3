@@ -3,8 +3,8 @@ import { motion } from 'framer-motion'
 import { useRef, useState } from 'react'
 import { generateDocument, mapFetchError } from '../services/aiService'
 import type { Job, PhotoReport, Profile } from '../types'
-import { encodeImage } from '../utils/storage'
-import { formatDate } from '../utils/storage'
+import { NAV_PB } from '../utils/layout'
+import { encodeImage, formatDate } from '../utils/storage'
 
 interface PhotoReportGeneratorProps {
   job?: Job
@@ -131,7 +131,7 @@ Photos count: ${photos.length}`
   }
 
   return (
-    <div className="fixed inset-0 z-[85] flex flex-col bg-[var(--color-bg)] px-4 pt-6">
+    <div className={`fixed inset-0 z-[85] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-4 pt-6 ${NAV_PB}`}>
       <button type="button" onClick={onClose} className="self-start font-body text-[var(--color-text-secondary)]">
         Cancel
       </button>

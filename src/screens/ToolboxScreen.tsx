@@ -2,6 +2,7 @@ import { BookOpen, FileText, ImageIcon, ReceiptText, Ruler } from 'lucide-react'
 import { FeaturePlaceholder } from '../components/FeaturePlaceholder'
 import { ToolCard } from '../components/ToolCard'
 import { AlertTriangle, ClipboardList } from 'lucide-react'
+import { NAV_PB } from '../utils/layout'
 
 interface ToolboxScreenProps {
   onQuote: () => void
@@ -21,7 +22,7 @@ export function ToolboxScreen({
   onSuggest,
 }: ToolboxScreenProps) {
   return (
-    <div className="px-4 pb-24 pt-6">
+    <div className={`px-4 pt-6 ${NAV_PB}`}>
       <h1 className="font-display text-2xl font-bold text-white">Toolbox</h1>
 
       <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">

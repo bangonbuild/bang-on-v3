@@ -11,6 +11,7 @@ import { useJobs } from './hooks/useJobs'
 import { useProfile } from './hooks/useProfile'
 import { useRecentChats } from './hooks/useRecentChats'
 import { useToast } from './hooks/useToast'
+import { useTheme } from './hooks/useTheme'
 import { useWeather } from './hooks/useWeather'
 import { HomeScreen } from './screens/HomeScreen'
 import { JobDetailScreen } from './screens/JobDetailScreen'
@@ -22,7 +23,8 @@ import { SettingsScreen } from './screens/SettingsScreen'
 import { SnapScreen } from './screens/SnapScreen'
 import { SuggestToolScreen } from './screens/SuggestToolScreen'
 import { ToolboxScreen } from './screens/ToolboxScreen'
-import type { GeneratedDocument, JobFilter, PhotoReport, SnapMode, TabId } from './types'
+import type { GeneratedDocument, JobFilter, PhotoReport, SnapMode, TabId, TimelineEntry } from './types'
+import { parseDocumentFromEntry, serializeDocument } from './utils/storage'
 
 type Overlay =
   | { type: 'none' }
@@ -30,7 +32,7 @@ type Overlay =
   | { type: 'snap'; mode: SnapMode; jobId?: string }
   | { type: 'job-detail'; jobId: string }
   | { type: 'job-form'; jobId?: string; returnToJobId?: string }
-  | { type: 'quote'; docType: 'quote' | 'invoice'; jobId?: string }
+  | { type: 'quote'; docType: 'quote' | 'invoice'; jobId?: string; entryId?: string }
   | { type: 'photo-report'; jobId?: string }
   | { type: 'measure' }
   | { type: 'suggest-tool' }
@@ -43,11 +45,13 @@ export default function App() {
   const [jobFilter, setJobFilter] = useState<JobFilter>('all')
   const [weatherOpen, setWeatherOpen] = useState(false)
 
-  const { jobs, addJob, updateJob, addTimelineEntry, updateTimelineEntry, getJob } = useJobs()
+  const { jobs, addJob, updateJob, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry, getJob } =
+    useJobs()
   const { profile, payment, setProfile, setPayment } = useProfile()
   const { saveChat, clearChats } = useRecentChats()
   const { showToast, toastMessage, toastVisible } = useToast()
   const weather = useWeather()
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     const t = window.setTimeout(() => setSplash(false), 500)
@@ -97,11 +101,23 @@ export default function App() {
   const saveQuoteToJob = (jobId: string, doc: GeneratedDocument) => {
     addTimelineEntry(jobId, {
       type: doc.type,
-      content: doc.rawContent || `${doc.type} generated`,
+      content: serializeDocument(doc),
       amount: doc.total,
     })
     showToast('Saved to job timeline.')
     goToJobDetail(jobId)
+  }
+
+  const openDocFromTimeline = (jobId: string, entry: TimelineEntry) => {
+    const parsed = parseDocumentFromEntry(entry.content)
+    if (parsed && (entry.type === 'quote' || entry.type === 'invoice')) {
+      setOverlay({
+        type: 'quote',
+        docType: entry.type,
+        jobId,
+        entryId: entry.id,
+      })
+    }
   }
 
   const hideNav =
@@ -158,6 +174,8 @@ export default function App() {
             setPayment={setPayment}
             onClearChats={clearChats}
             showToast={showToast}
+            theme={theme}
+            setTheme={setTheme}
           />
         )
       default:
@@ -199,7 +217,8 @@ export default function App() {
           onUpdateEntry={(entryId, updates) =>
             updateTimelineEntry(job.id, entryId, updates)
           }
-          onOpenDoc={() => showToast("Coming soon — we're working on it.")}
+          onOpenDoc={(entry) => openDocFromTimeline(job.id, entry)}
+          showToast={showToast}
         />
       )
     }
@@ -254,6 +273,10 @@ export default function App() {
     }
     if (overlay.type === 'quote') {
       const job = overlay.jobId ? getJob(overlay.jobId) : undefined
+      const entry = overlay.entryId
+        ? job?.timeline.find((e) => e.id === overlay.entryId)
+        : undefined
+      const initialDoc = entry ? parseDocumentFromEntry(entry.content) : undefined
       return (
         <QuoteGenerator
           type={overlay.docType}
@@ -262,9 +285,32 @@ export default function App() {
           payment={payment}
           onClose={closeQuote}
           onSaveToJob={
-            overlay.jobId ? (doc) => saveQuoteToJob(overlay.jobId!, doc) : undefined
+            overlay.jobId && !overlay.entryId
+              ? (doc) => saveQuoteToJob(overlay.jobId!, doc)
+              : undefined
           }
           showToast={showToast}
+          editEntryId={overlay.entryId}
+          initialDoc={initialDoc ?? undefined}
+          onUpdateEntry={
+            overlay.jobId && overlay.entryId
+              ? (entryId, doc) => {
+                  updateTimelineEntry(overlay.jobId!, entryId, {
+                    content: serializeDocument(doc),
+                    amount: doc.total,
+                  })
+                }
+              : undefined
+          }
+          onDeleteEntry={
+            overlay.jobId && overlay.entryId
+              ? (entryId) => {
+                  deleteTimelineEntry(overlay.jobId!, entryId)
+                  showToast('Removed from timeline.')
+                  goToJobDetail(overlay.jobId!)
+                }
+              : undefined
+          }
         />
       )
     }
@@ -298,9 +344,13 @@ export default function App() {
     if (overlay.type === 'suggest-tool') {
       return (
         <SuggestToolScreen
-          onBack={closeOverlay}
+          onBack={() => {
+            setTab('toolbox')
+            closeOverlay()
+          }}
           onSubmit={() => {
             showToast("Thanks — we'll add it to the backlog.")
+            setTab('toolbox')
             closeOverlay()
           }}
         />

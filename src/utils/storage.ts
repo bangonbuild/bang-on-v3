@@ -1,3 +1,5 @@
+import type { GeneratedDocument } from '../types'
+
 export function loadJson<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key)
@@ -23,7 +25,22 @@ export const STORAGE_KEYS = {
   payment: 'bang-on-payment',
   pendingChat: 'bang-on-pending-chat',
   team: 'bang-on-team',
+  theme: 'bang-on-theme',
 } as const
+
+export function parseDocumentFromEntry(content: string): GeneratedDocument | null {
+  try {
+    const parsed = JSON.parse(content) as GeneratedDocument
+    if (parsed?.lineItems && Array.isArray(parsed.lineItems)) return parsed
+  } catch {
+    /* not JSON */
+  }
+  return null
+}
+
+export function serializeDocument(doc: GeneratedDocument): string {
+  return JSON.stringify(doc)
+}
 
 export const encodeImage = (file: File): Promise<{ base64: string; mimeType: string }> => {
   return new Promise((resolve, reject) => {

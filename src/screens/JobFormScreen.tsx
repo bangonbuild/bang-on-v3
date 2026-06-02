@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import type { Job, JobStatus } from '../types'
+import { NAV_PB } from '../utils/layout'
 
 interface JobFormScreenProps {
   job?: Job
@@ -36,7 +37,7 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
     'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-white'
 
   return (
-    <div className="px-4 pb-24 pt-6">
+    <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
           <ArrowLeft size={22} className="text-white" />

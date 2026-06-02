@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { analyseImage, mapFetchError } from '../services/aiService'
 import type { Profile, SnapMode } from '../types'
+import { NAV_PB } from '../utils/layout'
 import { encodeImage, saveJson, STORAGE_KEYS } from '../utils/storage'
 
 type SnapStep = 'capture' | 'preview' | 'loading' | 'results'
@@ -102,7 +103,7 @@ export function SnapScreen({
   }
 
   return (
-    <div className="flex h-full flex-col px-4 pb-4">
+    <div className={`flex h-full flex-col overflow-y-auto px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3 pt-6">
         <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
           <Icon icon={ArrowLeft} size={22} className="text-white" />

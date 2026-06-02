@@ -21,9 +21,9 @@ export function JobCard({ job, onClick, compact = true }: JobCardProps) {
       onClick={onClick}
       className={`shrink-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left ${
         compact ? 'w-[220px]' : 'w-full'
-      } ${job.attention ? 'border-l-[3px] border-l-[var(--color-border-2)]' : ''}`}
+      }`}
     >
-      <p className="font-body text-[15px] font-medium text-white">{job.name}</p>
+      <p className="font-body text-[15px] font-medium text-[var(--color-text-primary)]">{job.name}</p>
       {!compact && (
         <>
           <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">
@@ -37,7 +37,7 @@ export function JobCard({ job, onClick, compact = true }: JobCardProps) {
         </>
       )}
       {job.attention && (
-        <p className="mt-2 font-body text-xs text-white">{job.attention}</p>
+        <p className="mt-2 font-body text-xs text-[var(--color-text-primary)]">{job.attention}</p>
       )}
       <span
         className="mt-3 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium"

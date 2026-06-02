@@ -3,6 +3,8 @@ import { useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { Icon } from '../components/Icon'
 import type { PaymentDetails, Profile, Teammate } from '../types'
+import type { Theme } from '../hooks/useTheme'
+import { NAV_PB } from '../utils/layout'
 import { generateId, loadJson, saveJson, STORAGE_KEYS } from '../utils/storage'
 
 const TRADES = [
@@ -21,6 +23,8 @@ interface SettingsScreenProps {
   setPayment: Dispatch<SetStateAction<PaymentDetails>>
   onClearChats: () => void
   showToast: (msg: string) => void
+  theme: Theme
+  setTheme: (theme: Theme) => void
 }
 
 function hasProfileData(p: Profile) {
@@ -38,6 +42,8 @@ export function SettingsScreen({
   setPayment,
   onClearChats,
   showToast,
+  theme,
+  setTheme,
 }: SettingsScreenProps) {
   const [profileEditing, setProfileEditing] = useState(!hasProfileData(profile))
   const [paymentEditing, setPaymentEditing] = useState(!hasPaymentData(payment))
@@ -80,7 +86,7 @@ export function SettingsScreen({
   }
 
   return (
-    <div className="px-4 pb-24 pt-6">
+    <div className={`px-4 pt-6 ${NAV_PB}`}>
       <h1 className="font-display text-2xl font-bold text-white">Settings</h1>
 
       <SectionHeader
@@ -292,6 +298,26 @@ export function SettingsScreen({
           ))}
         </div>
       )}
+
+      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
+        Appearance
+      </p>
+      <div className="mt-2 flex gap-2">
+        {(['dark', 'light'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTheme(t)}
+            className={`min-h-[36px] flex-1 rounded-full px-3 font-body text-sm capitalize ${
+              theme === t
+                ? 'bg-white text-black'
+                : 'border border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-primary)]'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
 
       <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
         App

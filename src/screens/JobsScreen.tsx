@@ -2,6 +2,7 @@ import { Briefcase, Filter, Plus } from 'lucide-react'
 import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import type { Job, JobFilter } from '../types'
+import { NAV_PB } from '../utils/layout'
 import { formatRelativeTime } from '../utils/storage'
 
 interface JobsScreenProps {
@@ -31,7 +32,7 @@ export function JobsScreen({
   const showFilterEmpty = filtered.length === 0 && !showCreateEmpty
 
   return (
-    <div className="relative min-h-full px-4 pb-28 pt-6">
+    <div className={`relative min-h-full px-4 pt-6 ${NAV_PB}`}>
       <h1 className="font-display text-2xl font-bold text-white">Jobs</h1>
       <div className="mt-4 flex flex-wrap gap-2">
         {filters.map((f) => (
@@ -90,7 +91,7 @@ export function JobsScreen({
       <button
         type="button"
         onClick={onNewJob}
-        className="fixed bottom-24 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-white"
+        className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] right-4 flex h-14 w-14 items-center justify-center rounded-full bg-white"
         aria-label="New job"
       >
         <Plus size={28} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />

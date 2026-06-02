@@ -94,6 +94,20 @@ export function useJobs() {
     [],
   )
 
+  const deleteTimelineEntry = useCallback((jobId: string, entryId: string) => {
+    setJobs((prev) =>
+      prev.map((j) =>
+        j.id === jobId
+          ? {
+              ...j,
+              timeline: j.timeline.filter((e) => e.id !== entryId),
+              updatedAt: Date.now(),
+            }
+          : j,
+      ),
+    )
+  }, [])
+
   const getJob = useCallback(
     (id: string) => jobs.find((j) => j.id === id),
     [jobs],
@@ -106,6 +120,7 @@ export function useJobs() {
     deleteJob,
     addTimelineEntry,
     updateTimelineEntry,
+    deleteTimelineEntry,
     getJob,
   }
 }

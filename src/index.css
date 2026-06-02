@@ -13,6 +13,17 @@
   --color-success: #34c759;
 }
 
+[data-theme='light'] {
+  --color-bg: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #eeeeee;
+  --color-border: #e0e0e0;
+  --color-border-2: #cccccc;
+  --color-text-primary: #000000;
+  --color-text-secondary: rgba(0, 0, 0, 0.6);
+  --color-text-tertiary: rgba(0, 0, 0, 0.35);
+}
+
 @theme {
   --font-display: 'Source Code Pro', ui-monospace, monospace;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -42,6 +53,41 @@ body,
   font-family: var(--font-body);
 }
 
+/* Light mode — inverted primary action cards */
+[data-theme='light'] .snap-speak-card {
+  background: #111111 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .snap-speak-card:active {
+  background: #222222 !important;
+}
+
+[data-theme='light'] .snap-speak-card .snap-speak-title {
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .snap-speak-card .snap-speak-subtitle {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme='light'] .snap-speak-card .snap-speak-icon {
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .nudge-fab {
+  background: #111111 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme='light'] .nudge-fab:active {
+  background: #222222 !important;
+}
+
+[data-theme='light'] .nudge-fab-icon {
+  color: #ffffff !important;
+}
+
 @keyframes pulse-dot {
   0%,
   100% {
@@ -60,6 +106,10 @@ body,
   border-radius: 50%;
   background: #ffffff;
   animation: pulse-dot 2s ease-in-out infinite;
+}
+
+[data-theme='light'] .pulse-dot {
+  background: #000000;
 }
 
 @keyframes typing-bounce {

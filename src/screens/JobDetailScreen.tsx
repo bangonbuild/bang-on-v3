@@ -1,10 +1,11 @@
-import { ArrowLeft, FileText, ReceiptText, StickyNote } from 'lucide-react'
+import { ArrowLeft, FileText, MapPin, ReceiptText, StickyNote } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
 import { StatusBadge } from '../components/StatusBadge'
 import { sendChatMessage } from '../services/aiService'
 import type { Job, Profile, TimelineEntry } from '../types'
+import { NAV_PB } from '../utils/layout'
 import { formatRelativeTime } from '../utils/storage'
 
 interface JobDetailScreenProps {
@@ -19,6 +20,7 @@ interface JobDetailScreenProps {
   onAddPhoto: (content: string, imageUrl: string) => void
   onUpdateEntry: (entryId: string, updates: Partial<TimelineEntry>) => void
   onOpenDoc: (entry: TimelineEntry) => void
+  showToast: (msg: string) => void
 }
 
 type PhotoStep = 'idle' | 'capture' | 'preview'
@@ -35,6 +37,7 @@ export function JobDetailScreen({
   onAddPhoto,
   onUpdateEntry,
   onOpenDoc,
+  showToast,
 }: JobDetailScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
@@ -47,6 +50,8 @@ export function JobDetailScreen({
   const [polishLoading, setPolishLoading] = useState(false)
   const cameraRef = useRef<HTMLInputElement>(null)
   const libraryRef = useRef<HTMLInputElement>(null)
+
+  const inPhotoFlow = photoStep !== 'idle'
 
   const handleAction = (action: JobAction) => {
     switch (action) {
@@ -112,31 +117,47 @@ export function JobDetailScreen({
   }
 
   return (
-    <div className="flex min-h-full flex-col px-4 pb-24 pt-6">
-      <header>
-        <div className="flex items-start justify-between">
-          <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
-            <Icon icon={ArrowLeft} size={22} className="text-white" />
-          </button>
-          <button type="button" onClick={onEdit} className="font-body text-sm text-[var(--color-text-secondary)]">
-            Edit
-          </button>
+    <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-6 ${NAV_PB}`}>
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
+          <Icon icon={ArrowLeft} size={22} className="text-[var(--color-text-primary)]" />
+        </button>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="font-display text-[13px] text-[var(--color-text-secondary)]"
+        >
+          Edit
+        </button>
+      </div>
+
+      <div className="mt-4 flex gap-3">
+        <div className="flex min-w-0 flex-[0.55] flex-col">
+          <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">{job.name}</h1>
+          <p className="mt-2 font-body text-sm text-[var(--color-text-secondary)]">{job.client}</p>
+          {job.phone && (
+            <p className="font-body text-sm text-[var(--color-text-secondary)]">{job.phone}</p>
+          )}
+          {job.address && (
+            <p className="font-body text-[13px] text-[var(--color-text-tertiary)]">{job.address}</p>
+          )}
+          <div className="mt-3">
+            <StatusBadge status={job.status} />
+          </div>
+          <p className="mt-2 font-body text-xs text-[var(--color-text-tertiary)]">
+            Last updated: {formatRelativeTime(job.updatedAt)}
+          </p>
         </div>
-        <div className="mt-2 flex items-start justify-between gap-2">
-          <h1 className="font-display text-xl font-bold text-white">{job.name}</h1>
-          <StatusBadge status={job.status} />
-        </div>
-        <p className="mt-2 font-body text-sm text-[var(--color-text-secondary)]">{job.client}</p>
-        {job.phone && (
-          <p className="font-body text-sm text-[var(--color-text-secondary)]">{job.phone}</p>
-        )}
-        {job.address && (
-          <p className="font-body text-[13px] text-[var(--color-text-tertiary)]">{job.address}</p>
-        )}
-        <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
-          Last updated: {formatRelativeTime(job.updatedAt)}
-        </p>
-      </header>
+        <button
+          type="button"
+          onClick={() => showToast('Map view coming soon.')}
+          className="flex min-h-[100px] min-w-0 flex-[0.45] flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+        >
+          {/* TODO: wire Google Maps or Mapbox with address from job data */}
+          <Icon icon={MapPin} size={20} muted />
+          <span className="mt-2 font-body text-[11px] text-[var(--color-text-tertiary)]">Map view</span>
+        </button>
+      </div>
 
       {photoStep === 'capture' && (
         <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -165,7 +186,7 @@ export function JobDetailScreen({
           <button
             type="button"
             onClick={() => libraryRef.current?.click()}
-            className="mt-2 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] font-body text-white"
+            className="mt-2 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] font-body text-[var(--color-text-primary)]"
           >
             Choose from library
           </button>
@@ -183,7 +204,7 @@ export function JobDetailScreen({
             onChange={(e) => setPhotoCaption(e.target.value)}
             placeholder="Add a note to this photo..."
             rows={3}
-            className="mt-3 w-full bg-transparent font-body text-white outline-none placeholder:text-[var(--color-text-tertiary)]"
+            className="mt-3 w-full bg-transparent font-body text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)]"
           />
           <button
             type="button"
@@ -205,7 +226,7 @@ export function JobDetailScreen({
             onChange={(e) => setNoteText(e.target.value)}
             rows={3}
             placeholder="Site note..."
-            className="w-full bg-transparent font-body text-white outline-none"
+            className="w-full bg-transparent font-body text-[var(--color-text-primary)] outline-none"
           />
           <button
             type="button"
@@ -230,9 +251,9 @@ export function JobDetailScreen({
       {polishPreview && polishId && (
         <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="font-body text-xs text-[var(--color-text-tertiary)]">Original</p>
-          <p className="font-body text-sm text-white/60">{polishPreview.original}</p>
+          <p className="font-body text-sm text-[var(--color-text-secondary)]">{polishPreview.original}</p>
           <p className="mt-3 font-body text-xs text-[var(--color-text-tertiary)]">Polished</p>
-          <p className="font-body text-sm text-white">{polishPreview.polished}</p>
+          <p className="font-body text-sm text-[var(--color-text-primary)]">{polishPreview.polished}</p>
           <div className="mt-3 flex gap-2">
             <button
               type="button"
@@ -254,7 +275,7 @@ export function JobDetailScreen({
                 setPolishPreview(null)
                 setPolishId(null)
               }}
-              className="flex-1 min-h-[40px] rounded-lg border border-[var(--color-border)] font-body text-sm text-white"
+              className="flex-1 min-h-[40px] rounded-lg border border-[var(--color-border)] font-body text-sm text-[var(--color-text-primary)]"
             >
               Discard
             </button>
@@ -262,15 +283,17 @@ export function JobDetailScreen({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setDrawerOpen(true)}
-        className="mt-6 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
-      >
-        + Add to job
-      </button>
+      {!inPhotoFlow && (
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="mt-6 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+        >
+          + Add to job
+        </button>
+      )}
 
-      <div className="mt-6 flex-1">
+      <div className="mt-6">
         {job.timeline.length === 0 ? (
           <div className="py-12 text-center">
             <p className="font-body text-[var(--color-text-tertiary)]">No entries yet.</p>
@@ -319,7 +342,9 @@ function TimelineItem({
     return (
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <img src={entry.imageUrl} alt="" className="w-full rounded-xl object-cover" />
-        {entry.content && <p className="mt-2 font-body text-[15px] text-white">{entry.content}</p>}
+        {entry.content && (
+          <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
+        )}
         <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
           {formatRelativeTime(entry.timestamp)}
         </p>
@@ -336,7 +361,7 @@ function TimelineItem({
       >
         <Icon icon={DocIcon} size={18} muted />
         <div>
-          <p className="font-body text-white capitalize">
+          <p className="font-body capitalize text-[var(--color-text-primary)]">
             {entry.type} — ${entry.amount?.toLocaleString() ?? '0'}
           </p>
           <p className="font-body text-xs text-[var(--color-text-tertiary)]">
@@ -350,7 +375,7 @@ function TimelineItem({
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <Icon icon={StickyNote} size={16} muted />
-      <p className="mt-2 font-body text-[15px] text-white">{entry.content}</p>
+      <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
       <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
         {formatRelativeTime(entry.timestamp)}
       </p>

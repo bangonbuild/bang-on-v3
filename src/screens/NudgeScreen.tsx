@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon'
 import { sendChatMessage, mapFetchError } from '../services/aiService'
 import type { ChatMessage, Job, PendingChat, Profile } from '../types'
 import { buildJobContext } from '../utils/jobHelpers'
+import { NAV_BOTTOM } from '../utils/layout'
 import { STORAGE_KEYS } from '../utils/storage'
 
 interface NudgeScreenProps {
@@ -32,11 +33,13 @@ export function NudgeScreen({
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [inputBottom, setInputBottom] = useState(0)
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const pendingHandled = useRef(false)
   const snapContextRef = useRef<string | null>(null)
+
+  const inputBarBottom = `calc(${NAV_BOTTOM} + ${keyboardOffset}px)`
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -106,7 +109,7 @@ export function NudgeScreen({
     if (!vv) return
     const update = () => {
       const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-      setInputBottom(offset)
+      setKeyboardOffset(offset)
     }
     update()
     vv.addEventListener('resize', update)
@@ -126,24 +129,27 @@ export function NudgeScreen({
   const welcomeLine = name ? `G'day ${name}. How can I help?` : "G'day. How can I help?"
 
   return (
-    <div className="flex h-full min-h-0 flex-col pb-16">
+    <div className="relative flex h-full min-h-0 flex-col">
       <header className="shrink-0 flex items-center gap-3 px-4 pb-2 pt-6">
         <button type="button" onClick={handleBack} className="min-h-[48px] min-w-[48px]">
-          <Icon icon={ArrowLeft} size={22} className="text-white" />
+          <Icon icon={ArrowLeft} size={22} className="text-[var(--color-text-primary)]" />
         </button>
         <div>
-          <h1 className="font-display text-xl font-bold text-white">Ask Nudge</h1>
+          <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">Ask Nudge</h1>
           {job && (
             <p className="font-body text-[13px] text-[var(--color-text-secondary)]">{job.name}</p>
           )}
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-4"
+        style={{ paddingBottom: `calc(${NAV_BOTTOM} + 4.5rem + ${keyboardOffset}px)` }}
+      >
         {messages.length === 0 && !loading && (
           <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
             <div className="pulse-dot mb-4" />
-            <p className="font-display text-xl text-white">Bangon</p>
+            <p className="font-display text-xl text-[var(--color-text-primary)]">Bangon</p>
             <p className="mt-2 font-body text-[15px] text-[var(--color-text-secondary)]">
               {welcomeLine}
             </p>
@@ -166,17 +172,17 @@ export function NudgeScreen({
       </div>
 
       <div
-        className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3"
-        style={{ marginBottom: inputBottom }}
+        className="fixed left-0 right-0 z-40 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3"
+        style={{ bottom: inputBarBottom }}
       >
-        <div className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-lg items-center gap-2">
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && void sendMessage(input)}
             placeholder="Ask Nudge..."
-            className="min-h-[48px] flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-white placeholder:text-[var(--color-text-tertiary)]"
+            className="min-h-[48px] flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
           />
           <button
             type="button"
@@ -191,7 +197,7 @@ export function NudgeScreen({
             onClick={() => void sendMessage(input)}
             className="flex min-h-[48px] min-w-[48px] items-center justify-center disabled:opacity-30"
           >
-            <Icon icon={ArrowUp} size={22} className="text-white" />
+            <Icon icon={ArrowUp} size={22} className="text-[var(--color-text-primary)]" />
           </button>
         </div>
       </div>

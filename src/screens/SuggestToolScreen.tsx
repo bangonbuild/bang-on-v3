@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
+import { NAV_PB } from '../utils/layout'
 import { Toggle } from '../components/Toggle'
 
 interface SuggestToolScreenProps {
@@ -23,7 +24,7 @@ export function SuggestToolScreen({ onBack, onSubmit }: SuggestToolScreenProps) 
   }
 
   return (
-    <div className="flex h-full flex-col px-4 pb-24 pt-6">
+    <div className={`flex h-full flex-col overflow-y-auto px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
           <Icon icon={ArrowLeft} size={22} className="text-white" />
