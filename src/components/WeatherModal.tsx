@@ -33,7 +33,7 @@ export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModal
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] bg-black/70"
+            className="fixed inset-0 z-[80] bg-[var(--color-bg)]/70"
             onClick={onClose}
           />
           <motion.div
@@ -43,12 +43,12 @@ export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModal
             className="fixed bottom-0 left-0 right-0 z-[81] max-h-[85vh] overflow-y-auto rounded-t-[20px] bg-[var(--color-surface)] p-6 pb-10"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-base text-white">Weather</h2>
+              <h2 className="font-display text-base text-[var(--color-text-primary)]">Weather</h2>
               <button type="button" onClick={onClose} className="min-h-[48px] min-w-[48px]">
                 <Icon icon={X} size={20} className="text-[var(--color-text-secondary)]" />
               </button>
             </div>
-            <p className="font-display text-5xl text-white">{weather.temp ?? '—'}°</p>
+            <p className="font-display text-5xl text-[var(--color-text-primary)]">{weather.temp ?? '—'}°</p>
             <p className="mt-1 font-body text-[15px] text-[var(--color-text-secondary)]">
               {weather.description}
             </p>
@@ -62,7 +62,7 @@ export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModal
                   className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-3"
                 >
                   <p className="font-body text-xs text-[var(--color-text-tertiary)]">{p.label}</p>
-                  <p className="font-body text-sm text-white">{p.value}</p>
+                  <p className="font-body text-sm text-[var(--color-text-primary)]">{p.value}</p>
                 </div>
               ))}
             </div>
@@ -76,7 +76,7 @@ export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModal
                     <p className="font-body text-xs text-[var(--color-text-tertiary)]">
                       {formatDay(day.date)}
                     </p>
-                    <p className="mt-1 font-body text-sm text-white">
+                    <p className="mt-1 font-body text-sm text-[var(--color-text-primary)]">
                       {day.high}° / {day.low}°
                     </p>
                     <p className="font-body text-xs text-[var(--color-text-secondary)]">
@@ -90,14 +90,14 @@ export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModal
               <p className="font-display text-[11px] tracking-wide text-[var(--color-text-tertiary)]">
                 Site advisory
               </p>
-              <p className="mt-2 font-body text-[15px] leading-relaxed text-white">
+              <p className="mt-2 font-body text-[15px] leading-relaxed text-[var(--color-text-primary)]">
                 {weather.siteAdvisory}
               </p>
             </div>
             <button
               type="button"
               onClick={onRefresh}
-              className="mt-6 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-white"
+              className="mt-6 min-h-[48px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-[var(--color-text-primary)]"
             >
               Refresh
             </button>

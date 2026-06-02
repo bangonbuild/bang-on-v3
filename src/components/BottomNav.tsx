@@ -1,5 +1,4 @@
 import { Banknote, Briefcase, House, MessageCircle, Wrench } from 'lucide-react'
-import { Icon } from './Icon'
 import type { TabId } from '../types'
 
 interface BottomNavProps {
@@ -21,7 +20,7 @@ const rightTabs: { id: TabId; label: string; icon: typeof House }[] = [
 function TabButton({
   id,
   label,
-  icon,
+  icon: TabIcon,
   active,
   onChange,
 }: {
@@ -37,10 +36,15 @@ function TabButton({
       onClick={() => onChange(id)}
       className="flex min-h-[48px] flex-1 flex-col items-center justify-center gap-1"
     >
-      <Icon icon={icon} size={22} className={active ? 'text-[var(--color-text-primary)]' : ''} muted={!active} />
+      <TabIcon
+        size={22}
+        strokeWidth={2}
+        className={active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-tertiary)]'}
+        style={{ shapeRendering: 'geometricPrecision' }}
+      />
       <span
         className={`font-display text-[11px] ${
-          active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-primary)] opacity-[0.35]'
+          active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-tertiary)]'
         }`}
       >
         {label}
@@ -61,12 +65,12 @@ export function BottomNav({ active, onChange, onNudge }: BottomNavProps) {
             type="button"
             onClick={onNudge}
             aria-label="Ask Nudge"
-            className="nudge-fab flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full border border-white/10 bg-white active:bg-[#F0F0F0]"
+            className="nudge-fab flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full border"
           >
             <MessageCircle
               size={24}
               strokeWidth={2}
-              className="nudge-fab-icon text-black"
+              className="nudge-fab-icon"
               style={{ shapeRendering: 'geometricPrecision' }}
             />
           </button>

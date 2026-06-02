@@ -53,35 +53,96 @@ body,
   font-family: var(--font-body);
 }
 
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.bg-surface-2 {
+  background-color: var(--color-surface-2);
+}
+
+.border-default {
+  border-color: var(--color-border);
+}
+
+.btn-primary {
+  background-color: var(--color-text-primary);
+  color: var(--color-bg);
+}
+
+.btn-primary:active {
+  opacity: 0.9;
+}
+
+.chip-active {
+  background-color: var(--color-text-primary);
+  color: var(--color-bg);
+}
+
+.chip-inactive {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
 [data-theme='light'] .snap-speak-card {
-  background: #111111 !important;
-  color: #ffffff !important;
+  background: var(--color-text-primary) !important;
+  color: var(--color-bg) !important;
 }
 
 [data-theme='light'] .snap-speak-card:active {
-  background: #222222 !important;
+  opacity: 0.9;
 }
 
 [data-theme='light'] .snap-speak-card .snap-speak-title,
-[data-theme='light'] .snap-speak-card .snap-speak-subtitle {
-  color: #ffffff !important;
-}
-
+[data-theme='light'] .snap-speak-card .snap-speak-subtitle,
 [data-theme='light'] .snap-speak-card .snap-speak-icon {
-  color: #ffffff !important;
+  color: var(--color-bg) !important;
 }
 
 [data-theme='light'] .nudge-fab {
-  background: #111111 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: var(--color-text-primary) !important;
+  border-color: var(--color-border-2) !important;
 }
 
 [data-theme='light'] .nudge-fab:active {
-  background: #222222 !important;
+  opacity: 0.9;
 }
 
 [data-theme='light'] .nudge-fab-icon {
-  color: #ffffff !important;
+  color: var(--color-bg) !important;
+}
+
+.snap-speak-card {
+  background: var(--color-text-primary);
+  color: var(--color-bg);
+}
+
+.snap-speak-card .snap-speak-title,
+.snap-speak-card .snap-speak-subtitle,
+.snap-speak-card .snap-speak-icon {
+  color: var(--color-bg);
+}
+
+.nudge-fab {
+  background: var(--color-text-primary);
+  border-color: var(--color-border-2);
+}
+
+.nudge-fab-icon {
+  color: var(--color-bg);
 }
 
 @keyframes pulse-dot {
@@ -100,12 +161,8 @@ body,
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--color-text-primary);
   animation: pulse-dot 2s ease-in-out infinite;
-}
-
-[data-theme='light'] .pulse-dot {
-  background: #000000;
 }
 
 @keyframes typing-bounce {

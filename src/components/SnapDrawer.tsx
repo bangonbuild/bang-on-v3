@@ -26,7 +26,7 @@ export function SnapDrawer({ open, onClose, onSelectMode }: SnapDrawerProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] bg-black/70"
+            className="fixed inset-0 z-[70] bg-[var(--color-bg)]/70"
             onClick={onClose}
           />
           <motion.div
@@ -37,7 +37,9 @@ export function SnapDrawer({ open, onClose, onSelectMode }: SnapDrawerProps) {
             className="fixed bottom-0 left-0 right-0 z-[71] rounded-t-[20px] bg-[var(--color-surface)] px-4 pb-8 pt-3"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--color-border-2)]" />
-            <h2 className="font-display text-base text-white">What do you want to snap?</h2>
+            <h2 className="font-display text-base text-[var(--color-text-primary)]">
+              What do you want to snap?
+            </h2>
             <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">
               Choose a mode
             </p>
@@ -52,12 +54,10 @@ export function SnapDrawer({ open, onClose, onSelectMode }: SnapDrawerProps) {
                   }}
                   className="flex min-h-[48px] w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-left"
                 >
-                  <Icon icon={icon} size={20} className="text-white" />
+                  <Icon icon={icon} size={20} />
                   <div>
-                    <p className="font-body text-[15px] text-white">{label}</p>
-                    <p className="font-body text-[13px] text-[var(--color-text-secondary)]">
-                      {desc}
-                    </p>
+                    <p className="font-body text-[15px] text-[var(--color-text-primary)]">{label}</p>
+                    <p className="font-body text-[13px] text-[var(--color-text-secondary)]">{desc}</p>
                   </div>
                 </button>
               ))}

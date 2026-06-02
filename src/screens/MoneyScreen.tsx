@@ -46,16 +46,51 @@ function StatusPill({ status, type }: { status: string; type: 'quote' | 'invoice
   )
 }
 
+const DASHBOARD_COLUMNS = [
+  { key: 'outstanding' as const, label: 'OUTSTANDING', color: 'var(--color-text-primary)' },
+  { key: 'overdue' as const, label: 'OVERDUE', color: '#FF3B30' },
+  { key: 'paid' as const, label: 'PAID / MONTH', color: '#34C759' },
+]
+
+function MoneyDashboard({ stats }: { stats: MoneyScreenProps['stats'] }) {
+  const values = {
+    outstanding: stats.outstanding,
+    overdue: stats.overdue,
+    paid: stats.paidThisMonth,
+  }
+
+  return (
+    <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5">
+      <div className="flex items-stretch">
+        {DASHBOARD_COLUMNS.map((col, index) => (
+          <div
+            key={col.key}
+            className={`flex min-w-0 flex-1 flex-col ${
+              index > 0 ? 'border-l border-[var(--color-border-2)] pl-3' : ''
+            } ${index < DASHBOARD_COLUMNS.length - 1 ? 'pr-3' : ''}`}
+          >
+            <p className="font-display text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              {col.label}
+            </p>
+            <p
+              className="font-display mt-1 truncate text-[22px] font-bold leading-none"
+              style={{ color: col.color }}
+            >
+              {formatMoney(values[col.key])}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScreenProps) {
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <ScreenTitle>Money</ScreenTitle>
 
-      <div className="mt-6 flex flex-col gap-2">
-        <StatCard label="OUTSTANDING" amount={stats.outstanding} color="var(--color-text-primary)" />
-        <StatCard label="OVERDUE" amount={stats.overdue} color="#FF3B30" />
-        <StatCard label="PAID THIS MONTH" amount={stats.paidThisMonth} color="#34C759" />
-      </div>
+      <MoneyDashboard stats={stats} />
 
       <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
         Invoices
@@ -86,22 +121,6 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScre
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-function StatCard({ label, amount, color }: { label: string; amount: number; color: string }) {
-  return (
-    <div className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-      <p className="font-display text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        {label}
-      </p>
-      <p
-        className="font-display mt-2 text-[32px] font-bold leading-none whitespace-nowrap"
-        style={{ color }}
-      >
-        {formatMoney(amount)}
-      </p>
     </div>
   )
 }

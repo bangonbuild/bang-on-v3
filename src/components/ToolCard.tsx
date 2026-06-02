@@ -1,5 +1,4 @@
 import type { LucideIcon } from 'lucide-react'
-import { Icon } from './Icon'
 
 interface ToolCardProps {
   title: string
@@ -8,15 +7,20 @@ interface ToolCardProps {
   onClick: () => void
 }
 
-export function ToolCard({ title, subtitle, icon, onClick }: ToolCardProps) {
+export function ToolCard({ title, subtitle, icon: IconComp, onClick }: ToolCardProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[120px] flex-col rounded-xl border border-[var(--color-border-2)] bg-[var(--color-surface)] p-4 text-left active:bg-[var(--color-surface-2)]"
+      className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
     >
-      <Icon icon={icon} size={22} className="text-white" />
-      <p className="font-display mt-3 text-[15px] font-medium text-white">{title}</p>
+      <IconComp
+        size={22}
+        strokeWidth={2}
+        className="text-[var(--color-text-primary)]"
+        style={{ shapeRendering: 'geometricPrecision' }}
+      />
+      <p className="font-display mt-3 text-[15px] font-medium text-[var(--color-text-primary)]">{title}</p>
       <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">{subtitle}</p>
     </button>
   )

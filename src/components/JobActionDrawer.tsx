@@ -30,7 +30,7 @@ export function JobActionDrawer({ open, onClose, onSelect }: JobActionDrawerProp
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] bg-black/70"
+            className="fixed inset-0 z-[70] bg-[var(--color-bg)]/70"
             onClick={onClose}
           />
           <motion.div

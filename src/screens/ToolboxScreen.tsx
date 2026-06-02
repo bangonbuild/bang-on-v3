@@ -74,7 +74,7 @@ export function ToolboxScreen({
         <button
           type="button"
           onClick={onSuggest}
-          className="mt-4 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+          className="mt-4 min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
         >
           Suggest a tool →
         </button>

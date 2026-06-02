@@ -16,9 +16,9 @@ export function MeasureScreen({ onBack, onNudge }: MeasureScreenProps) {
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
-          <ArrowLeft size={22} className="text-white" />
+          <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
         </button>
-        <h1 className="font-display text-xl font-bold text-white">Measure & calculate</h1>
+        <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">Measure & calculate</h1>
       </header>
 
       <button
@@ -26,9 +26,9 @@ export function MeasureScreen({ onBack, onNudge }: MeasureScreenProps) {
         onClick={onNudge}
         className="mt-6 flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 text-left"
       >
-        <MessageCircle size={22} className="text-white" />
+        <MessageCircle size={22} className="text-[var(--color-text-primary)]" />
         <div>
-          <p className="font-display text-white">Ask Nudge to calculate</p>
+          <p className="font-display text-[var(--color-text-primary)]">Ask Nudge to calculate</p>
           <p className="font-body text-[13px] text-[var(--color-text-secondary)]">
             Describe what you need
           </p>
@@ -65,7 +65,7 @@ function CalcShell({
         onClick={onToggle}
         className="flex min-h-[48px] w-full items-center justify-between px-4"
       >
-        <span className="font-body text-white">{title}</span>
+        <span className="font-body text-[var(--color-text-primary)]">{title}</span>
         <ChevronDown
           size={18}
           className={`text-[var(--color-text-tertiary)] transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -91,7 +91,7 @@ function ConcreteCalc({ expanded, onToggle }: { expanded: boolean; onToggle: () 
       <Field label="Length (m)" value={length} onChange={setLength} />
       <Field label="Width (m)" value={width} onChange={setWidth} />
       <Field label="Depth (mm)" value={depth} onChange={setDepth} />
-      <p className="mt-3 font-body text-white">
+      <p className="mt-3 font-body text-[var(--color-text-primary)]">
         {volume.toFixed(2)} m³ · ~{bags} × 20kg bags
       </p>
     </CalcShell>
@@ -110,7 +110,7 @@ function RoofCalc({ expanded, onToggle }: { expanded: boolean; onToggle: () => v
     <CalcShell title="Roof pitch" expanded={expanded} onToggle={onToggle}>
       <Field label="Rise (mm)" value={rise} onChange={setRise} />
       <Field label="Run (mm)" value={run} onChange={setRun} />
-      <p className="mt-3 font-body text-white">
+      <p className="mt-3 font-body text-[var(--color-text-primary)]">
         {angle.toFixed(1)}° pitch · Rafter {rafter.toFixed(0)} mm
       </p>
     </CalcShell>
@@ -134,14 +134,14 @@ function StudCalc({ expanded, onToggle }: { expanded: boolean; onToggle: () => v
             type="button"
             onClick={() => setSpacing(s)}
             className={`flex-1 min-h-[40px] rounded-lg font-body text-sm ${
-              spacing === s ? 'bg-white text-black' : 'border border-[var(--color-border)] text-white'
+              spacing === s ? 'chip-active' : 'chip-inactive'
             }`}
           >
             {s} mm
           </button>
         ))}
       </div>
-      <p className="mt-3 font-body text-white">
+      <p className="mt-3 font-body text-[var(--color-text-primary)]">
         {count} studs · Layout: {positions.slice(0, 8).join(', ')}
         {positions.length > 8 ? '…' : ''} mm
       </p>
@@ -166,7 +166,7 @@ function WallCalc({ expanded, onToggle }: { expanded: boolean; onToggle: () => v
       <Field label="Height (m)" value={height} onChange={setHeight} />
       <Field label="Doors" value={doors} onChange={setDoors} />
       <Field label="Windows" value={windows} onChange={setWindows} />
-      <p className="mt-3 font-body text-white">
+      <p className="mt-3 font-body text-[var(--color-text-primary)]">
         Gross {gross.toFixed(2)} m² · Net {net.toFixed(2)} m²
       </p>
     </CalcShell>
@@ -190,7 +190,7 @@ function Field({
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-white"
+        className="mt-1 w-full min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 text-[var(--color-text-primary)]"
       />
     </label>
   )

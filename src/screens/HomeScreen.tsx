@@ -97,20 +97,20 @@ export function HomeScreen({
         <button
           type="button"
           onClick={onSnap}
-          className="snap-speak-card rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
+          className="snap-speak-card rounded-xl p-5 text-left active:opacity-90"
         >
-          <ScanLine size={24} strokeWidth={2} className="snap-speak-icon text-black" style={{ shapeRendering: 'geometricPrecision' }} />
-          <p className="snap-speak-title font-display mt-3 text-lg font-bold text-black">SNAP</p>
-          <p className="snap-speak-subtitle mt-1 font-body text-[13px] text-black/60">Photo → site advice</p>
+          <ScanLine size={24} strokeWidth={2} className="snap-speak-icon" style={{ shapeRendering: 'geometricPrecision' }} />
+          <p className="snap-speak-title font-display mt-3 text-lg font-bold">SNAP</p>
+          <p className="snap-speak-subtitle mt-1 font-body text-[13px] opacity-60">Photo → site advice</p>
         </button>
         <button
           type="button"
           onClick={onSpeak}
-          className="snap-speak-card rounded-xl bg-white p-5 text-left active:bg-[#F0F0F0]"
+          className="snap-speak-card rounded-xl p-5 text-left active:opacity-90"
         >
-          <Mic size={24} strokeWidth={2} className="snap-speak-icon text-black" style={{ shapeRendering: 'geometricPrecision' }} />
-          <p className="snap-speak-title font-display mt-3 text-lg font-bold text-black">SPEAK</p>
-          <p className="snap-speak-subtitle mt-1 font-body text-[13px] text-black/60">Ask with your voice</p>
+          <Mic size={24} strokeWidth={2} className="snap-speak-icon" style={{ shapeRendering: 'geometricPrecision' }} />
+          <p className="snap-speak-title font-display mt-3 text-lg font-bold">SPEAK</p>
+          <p className="snap-speak-subtitle mt-1 font-body text-[13px] opacity-60">Ask with your voice</p>
         </button>
       </div>
 

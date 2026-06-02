@@ -63,7 +63,7 @@ export function SettingsScreen({
   const logoRef = useRef<HTMLInputElement>(null)
 
   const inputClass =
-    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-white'
+    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-[var(--color-text-primary)]'
 
   const saveTeam = (team: Teammate[]) => {
     setTeammates(team)
@@ -148,8 +148,8 @@ export function SettingsScreen({
                   onClick={() => setDraftProfile({ ...draftProfile, trade: t })}
                   className={`min-h-[36px] rounded-full px-3 font-body text-sm ${
                     draftProfile.trade === t
-                      ? 'bg-white text-black'
-                      : 'border border-[var(--color-border)] bg-[var(--color-surface-2)] text-white'
+                      ? 'chip-active'
+                      : 'chip-inactive'
                   }`}
                 >
                   {t}
@@ -174,7 +174,7 @@ export function SettingsScreen({
               setProfileEditing(false)
               showToast('Profile saved.', 'success')
             }}
-            className="min-h-[48px] rounded-xl bg-white font-body font-medium text-black"
+            className="min-h-[48px] rounded-xl btn-primary font-body font-medium"
           >
             Save
           </button>
@@ -225,7 +225,7 @@ export function SettingsScreen({
           <button
             type="button"
             onClick={() => logoRef.current?.click()}
-            className="min-h-[48px] rounded-xl border border-[var(--color-border)] font-body text-white"
+            className="min-h-[48px] rounded-xl border border-[var(--color-border)] font-body text-[var(--color-text-primary)]"
           >
             Upload logo
           </button>
@@ -246,7 +246,7 @@ export function SettingsScreen({
               setPaymentEditing(false)
               showToast('Payment details saved.', 'success')
             }}
-            className="min-h-[48px] rounded-xl bg-white font-body font-medium text-black"
+            className="min-h-[48px] rounded-xl btn-primary font-body font-medium"
           >
             Save
           </button>
@@ -286,7 +286,7 @@ export function SettingsScreen({
         <button
           type="button"
           onClick={linkTeammate}
-          className="min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-white"
+          className="min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-[var(--color-text-primary)]"
         >
           Link teammate
         </button>
@@ -305,7 +305,7 @@ export function SettingsScreen({
               className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
             >
               <div>
-                <p className="font-body text-[15px] font-medium text-white">{t.name}</p>
+                <p className="font-body text-[15px] font-medium text-[var(--color-text-primary)]">{t.name}</p>
                 <p className="font-body text-[13px] text-[var(--color-text-secondary)]">{t.phone}</p>
                 <span className="mt-2 inline-block rounded-full bg-[rgba(52,199,89,0.15)] px-2 py-0.5 text-[11px] text-[#34C759]">
                   Linked
@@ -334,8 +334,8 @@ export function SettingsScreen({
             onClick={() => setTheme(t)}
             className={`min-h-[36px] flex-1 rounded-full px-3 font-body text-sm capitalize ${
               theme === t
-                ? 'bg-white text-black'
-                : 'border border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-primary)]'
+                ? 'chip-active'
+                : 'chip-inactive'
             }`}
           >
             {t}
@@ -409,7 +409,7 @@ function ViewBlock({
       {rows.map(([label, value]) => (
         <div key={label}>
           <p className="font-display text-[11px] text-[var(--color-text-tertiary)]">{label}</p>
-          <p className="font-body text-[15px] text-white">{value}</p>
+          <p className="font-body text-[15px] text-[var(--color-text-primary)]">{value}</p>
         </div>
       ))}
       {logo && <img src={logo} alt="Logo" className="h-16 w-auto object-contain" />}

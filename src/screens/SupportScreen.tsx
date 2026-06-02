@@ -69,7 +69,7 @@ export function SupportScreen({ profile, onBack, showToast }: SupportScreenProps
       <button
         type="button"
         onClick={handleSend}
-        className="mt-6 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+        className="mt-6 min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
       >
         Send message
       </button>

@@ -16,7 +16,7 @@ export function SuggestToolScreen({ onBack, onSubmit }: SuggestToolScreenProps) 
   const [newsletter, setNewsletter] = useState(false)
 
   const inputClass =
-    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-white placeholder:text-[var(--color-text-tertiary)]'
+    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]'
 
   const handleSend = () => {
     // TODO: wire to Airtable / Typeform for real backlog submissions
@@ -27,9 +27,9 @@ export function SuggestToolScreen({ onBack, onSubmit }: SuggestToolScreenProps) 
     <div className={`flex h-full flex-col overflow-y-auto px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
-          <Icon icon={ArrowLeft} size={22} className="text-white" />
+          <Icon icon={ArrowLeft} size={22} className="text-[var(--color-text-primary)]" />
         </button>
-        <h1 className="font-display text-xl font-bold text-white">Suggest a tool</h1>
+        <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">Suggest a tool</h1>
       </header>
       <p className="mt-2 font-body text-sm text-[var(--color-text-secondary)]">
         We&apos;re building Bang On with tradies. Tell us what you need.
@@ -75,7 +75,7 @@ export function SuggestToolScreen({ onBack, onSubmit }: SuggestToolScreenProps) 
       <button
         type="button"
         onClick={handleSend}
-        className="mt-4 min-h-[48px] w-full shrink-0 rounded-xl bg-white font-body font-medium text-black"
+        className="mt-4 min-h-[48px] w-full shrink-0 rounded-xl btn-primary font-body font-medium"
       >
         Send suggestion
       </button>

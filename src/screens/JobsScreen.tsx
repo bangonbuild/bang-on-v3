@@ -42,9 +42,7 @@ export function JobsScreen({
             type="button"
             onClick={() => onFilterChange(f.id)}
             className={`min-h-[36px] rounded-full px-4 font-body text-sm ${
-              filter === f.id
-                ? 'bg-white text-black'
-                : 'border border-[var(--color-border)] bg-[var(--color-surface-2)] text-white'
+              filter === f.id ? 'chip-active' : 'chip-inactive'
             }`}
           >
             {f.label}
@@ -55,7 +53,7 @@ export function JobsScreen({
       {showCreateEmpty && (
         <div className="mt-20 flex flex-col items-center text-center">
           <Icon icon={Briefcase} size={40} muted />
-          <p className="mt-4 font-body text-white">No jobs yet</p>
+          <p className="mt-4 font-body text-[var(--color-text-primary)]">No jobs yet</p>
           <button
             type="button"
             onClick={onNewJob}
@@ -92,10 +90,10 @@ export function JobsScreen({
       <button
         type="button"
         onClick={onNewJob}
-        className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] right-4 flex h-14 w-14 items-center justify-center rounded-full bg-white"
+        className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] right-4 flex h-14 w-14 items-center justify-center rounded-full btn-primary"
         aria-label="New job"
       >
-        <Plus size={28} strokeWidth={2} className="text-black" style={{ shapeRendering: 'geometricPrecision' }} />
+        <Plus size={28} strokeWidth={2} style={{ shapeRendering: 'geometricPrecision' }} />
       </button>
     </div>
   )

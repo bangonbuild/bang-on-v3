@@ -188,7 +188,7 @@ export function JobDetailScreen({
           <button
             type="button"
             onClick={() => cameraRef.current?.click()}
-            className="min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+            className="min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
           >
             Take photo
           </button>
@@ -218,7 +218,7 @@ export function JobDetailScreen({
           <button
             type="button"
             onClick={handleSavePhoto}
-            className="mt-2 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+            className="mt-2 min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
           >
             Save to timeline
           </button>
@@ -240,7 +240,7 @@ export function JobDetailScreen({
           <button
             type="button"
             onClick={handleSaveNote}
-            className="mt-2 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+            className="mt-2 min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
           >
             Save note
           </button>
@@ -274,7 +274,7 @@ export function JobDetailScreen({
                 setPolishPreview(null)
                 setPolishId(null)
               }}
-              className="flex-1 min-h-[40px] rounded-lg bg-white font-body text-sm text-black"
+              className="flex-1 min-h-[40px] rounded-lg btn-primary font-body text-sm"
             >
               Accept
             </button>
@@ -296,7 +296,7 @@ export function JobDetailScreen({
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          className="mt-6 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+          className="mt-6 min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
         >
           + Add to job
         </button>

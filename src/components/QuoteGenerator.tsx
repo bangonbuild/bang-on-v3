@@ -275,7 +275,7 @@ Keep it practical for a tradie. Australian English.`
               onClick={() => setInputMode(mode)}
               className={`min-h-[36px] flex-1 rounded font-body text-sm capitalize ${
                 inputMode === mode
-                  ? 'bg-white text-black'
+                  ? 'chip-active'
                   : 'text-[var(--color-text-secondary)]'
               }`}
             >
@@ -384,11 +384,11 @@ Keep it practical for a tradie. Australian English.`
         onClick={() =>
           void (inputMode === 'describe' && !isTimelineEdit ? handleDescribeGenerate() : handleBuildGenerate())
         }
-        className="mt-6 flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white font-body font-medium text-black disabled:opacity-50"
+        className="mt-6 flex min-h-[48px] items-center justify-center gap-2 rounded-xl btn-primary font-body font-medium disabled:opacity-50"
       >
         {loading ? (
           <>
-            <Loader2 size={20} className="animate-spin text-black" />
+            <Loader2 size={20} className="animate-spin text-[var(--color-bg)]" />
             Nudge is writing your {type}...
           </>
         ) : isTimelineEdit ? (

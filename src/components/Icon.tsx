@@ -20,7 +20,9 @@ export function Icon({
       size={size}
       strokeWidth={strokeWidth}
       absoluteStrokeWidth
-      className={`shrink-0 ${muted ? 'text-white opacity-[0.35]' : ''} ${className}`}
+      className={`shrink-0 ${
+        muted ? 'text-[var(--color-text-tertiary)]' : 'text-[var(--color-text-primary)]'
+      } ${className}`}
       style={{ shapeRendering: 'geometricPrecision' }}
     />
   )

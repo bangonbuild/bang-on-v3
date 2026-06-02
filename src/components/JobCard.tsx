@@ -9,7 +9,11 @@ interface JobCardProps {
 const statusStyles: Record<Job['status'], { bg: string; text: string; label: string }> = {
   active: { bg: 'rgba(52,199,89,0.15)', text: '#34C759', label: 'Active' },
   'on-hold': { bg: 'rgba(255,149,0,0.15)', text: '#FF9500', label: 'On hold' },
-  complete: { bg: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.5)', label: 'Complete' },
+  complete: {
+    bg: 'color-mix(in srgb, var(--color-text-primary) 10%, transparent)',
+    text: 'var(--color-text-tertiary)',
+    label: 'Complete',
+  },
 }
 
 export function JobCard({ job, onClick, compact = true }: JobCardProps) {

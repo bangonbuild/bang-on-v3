@@ -43,15 +43,15 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
   }
 
   const inputClass =
-    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-white'
+    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-[var(--color-text-primary)]'
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
-          <ArrowLeft size={22} className="text-white" />
+          <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
         </button>
-        <h1 className="font-display text-xl font-bold text-white">
+        <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">
           {job ? 'Edit job' : 'New job'}
         </h1>
       </header>
@@ -100,9 +100,7 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
                 type="button"
                 onClick={() => setStatus(s)}
                 className={`min-h-[40px] flex-1 rounded-lg font-body text-sm capitalize ${
-                  status === s
-                    ? 'bg-white text-black'
-                    : 'border border-[var(--color-border)] bg-[var(--color-surface-2)] text-white'
+                  status === s ? 'chip-active' : 'chip-inactive'
                 }`}
               >
                 {s === 'on-hold' ? 'On hold' : s}
@@ -114,7 +112,7 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          className="min-h-[48px] rounded-xl bg-white font-body font-medium text-black"
+          className="min-h-[48px] rounded-xl btn-primary font-body font-medium"
         >
           {job ? 'Save changes' : 'Create job'}
         </button>

@@ -206,7 +206,7 @@ export function QuoteOverlay({
               <button
                 type="button"
                 onClick={onBackToEdit}
-                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-sm text-white"
+                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-sm text-black"
               >
                 <ChevronLeft size={18} />
                 Edit

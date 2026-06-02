@@ -23,7 +23,7 @@ export function Toggle({ checked, onChange, label }: ToggleProps) {
         <motion.span
           layout
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          className="absolute top-[2px] block h-3 w-3 rounded-full bg-white"
+          className="absolute top-[2px] block h-3 w-3 rounded-full bg-[var(--color-bg)]"
           animate={{ left: checked ? 14 : 2 }}
         />
       </button>
