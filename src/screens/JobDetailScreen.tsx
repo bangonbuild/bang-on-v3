@@ -1,20 +1,27 @@
-import { ArrowLeft, FileText, MapPin, ReceiptText, StickyNote } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowLeft, FileText, MapPin, MessageCircle, ReceiptText, StickyNote, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
 import { StatusBadge } from '../components/StatusBadge'
-import { sendChatMessage } from '../services/aiService'
-import type { Job, Profile, TimelineEntry } from '../types'
+import { streamChatMessage } from '../services/aiService'
+import type { Job, MoneyRecord, Profile, TimelineEntry } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
 import { NAV_PB } from '../utils/layout'
-import { formatRelativeTime } from '../utils/storage'
+import { formatDate, formatRelativeTime } from '../utils/storage'
+
+type JobTab = 'timeline' | 'invoices' | 'quotes'
+type PhotoStep = 'idle' | 'capture' | 'preview'
 
 interface JobDetailScreenProps {
   job: Job
   profile: Profile
+  jobInvoices: MoneyRecord[]
+  jobQuotes: MoneyRecord[]
   onBack: () => void
   onEdit: () => void
   onNudge: () => void
+  onOpenMoneyRecord: (record: MoneyRecord) => void
   onQuote: () => void
   onInvoice: () => void
   onPhotoReport: () => void
@@ -25,14 +32,22 @@ interface JobDetailScreenProps {
   showToast: ShowToastFn
 }
 
-type PhotoStep = 'idle' | 'capture' | 'preview'
+const invoiceStatusStyle: Record<string, { bg: string; text: string }> = {
+  draft: { bg: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.5)' },
+  sent: { bg: 'rgba(255,149,0,0.15)', text: '#FF9500' },
+  paid: { bg: 'rgba(52,199,89,0.15)', text: '#34C759' },
+  overdue: { bg: 'rgba(255,59,48,0.15)', text: '#FF3B30' },
+}
 
 export function JobDetailScreen({
   job,
   profile,
+  jobInvoices,
+  jobQuotes,
   onBack,
   onEdit,
   onNudge,
+  onOpenMoneyRecord,
   onQuote,
   onInvoice,
   onPhotoReport,
@@ -43,8 +58,9 @@ export function JobDetailScreen({
   showToast,
 }: JobDetailScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [noteOpen, setNoteOpen] = useState(false)
+  const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [noteText, setNoteText] = useState('')
+  const [activeTab, setActiveTab] = useState<JobTab>('timeline')
   const [photoStep, setPhotoStep] = useState<PhotoStep>('idle')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoCaption, setPhotoCaption] = useState('')
@@ -56,13 +72,18 @@ export function JobDetailScreen({
 
   const inPhotoFlow = photoStep !== 'idle'
 
+  const sortedInvoices = [...jobInvoices].sort((a, b) => {
+    const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
+    const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
+    return da - db
+  })
+
+  const sortedQuotes = [...jobQuotes].sort((a, b) => b.createdAt - a.createdAt)
+
   const handleAction = (action: JobAction) => {
     switch (action) {
-      case 'nudge':
-        onNudge()
-        break
       case 'note':
-        setNoteOpen(true)
+        setNoteModalOpen(true)
         break
       case 'photo':
         setPhotoStep('capture')
@@ -102,17 +123,27 @@ export function JobDetailScreen({
   const handleSaveNote = () => {
     if (!noteText.trim()) return
     onAddNote(noteText.trim())
+    showToast('Note added.', 'success')
     setNoteText('')
-    setNoteOpen(false)
+    setNoteModalOpen(false)
   }
 
   const handlePolish = async (entry: TimelineEntry) => {
     setPolishId(entry.id)
     setPolishLoading(true)
     try {
-      const polished = await sendChatMessage({
-        message: `Rewrite this site note professionally for a client-facing record. Keep it concise. Original: ${entry.content}`,
+      let polished = ''
+      await streamChatMessage({
+        messages: [
+          {
+            role: 'user',
+            content: `Rewrite this site note professionally for a client-facing record. Keep it concise. Original: ${entry.content}`,
+          },
+        ],
         trade: profile.trade,
+        onToken: (t) => {
+          polished += t
+        },
       })
       setPolishPreview({ original: entry.content, polished })
     } catch {
@@ -122,11 +153,16 @@ export function JobDetailScreen({
     }
   }
 
+  const tabClass = (tab: JobTab) =>
+    `min-h-[36px] flex-1 rounded-full px-3 font-body text-sm capitalize ${
+      activeTab === tab ? 'chip-active' : 'chip-inactive'
+    }`
+
   return (
     <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-6 ${NAV_PB}`}>
       <div className="flex items-center justify-between">
-        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
-          <Icon icon={ArrowLeft} size={22} className="text-[var(--color-text-primary)]" />
+        <button type="button" onClick={onBack} className="flex h-12 w-12 shrink-0 items-center justify-center">
+          <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
         </button>
         <button
           type="button"
@@ -162,7 +198,6 @@ export function JobDetailScreen({
           onClick={() => showToast('Map view coming soon.', 'info')}
           className="flex min-h-[100px] min-w-0 flex-[0.45] flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
         >
-          {/* TODO: wire Google Maps or Mapbox with address from job data */}
           <Icon icon={MapPin} size={20} muted />
           <span className="mt-2 font-body text-[11px] text-[var(--color-text-tertiary)]">Map view</span>
         </button>
@@ -200,7 +235,7 @@ export function JobDetailScreen({
             Choose from library
           </button>
           <button type="button" onClick={cancelPhoto} className="mt-2 w-full font-body text-sm text-[var(--color-text-secondary)]">
-            Cancel
+            Dismiss
           </button>
         </div>
       )}
@@ -223,36 +258,7 @@ export function JobDetailScreen({
             Save to timeline
           </button>
           <button type="button" onClick={cancelPhoto} className="mt-2 w-full font-body text-sm text-[var(--color-text-secondary)]">
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {noteOpen && (
-        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <textarea
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            rows={3}
-            placeholder="Site note..."
-            className="w-full bg-transparent font-body text-[var(--color-text-primary)] outline-none"
-          />
-          <button
-            type="button"
-            onClick={handleSaveNote}
-            className="mt-2 min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
-          >
-            Save note
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setNoteOpen(false)
-              setNoteText('')
-            }}
-            className="mt-2 w-full font-body text-sm text-[var(--color-text-secondary)]"
-          >
-            Cancel
+            Dismiss
           </button>
         </div>
       )}
@@ -274,7 +280,7 @@ export function JobDetailScreen({
                 setPolishPreview(null)
                 setPolishId(null)
               }}
-              className="flex-1 min-h-[40px] rounded-lg btn-primary font-body text-sm"
+              className="min-h-[40px] flex-1 rounded-lg btn-primary font-body text-sm"
             >
               Accept
             </button>
@@ -284,7 +290,7 @@ export function JobDetailScreen({
                 setPolishPreview(null)
                 setPolishId(null)
               }}
-              className="flex-1 min-h-[40px] rounded-lg border border-[var(--color-border)] font-body text-sm text-[var(--color-text-primary)]"
+              className="min-h-[40px] flex-1 rounded-lg border border-[var(--color-border)] font-body text-sm text-[var(--color-text-primary)]"
             >
               Discard
             </button>
@@ -293,43 +299,205 @@ export function JobDetailScreen({
       )}
 
       {!inPhotoFlow && (
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="mt-6 min-h-[48px] w-full rounded-xl btn-primary font-body font-medium"
-        >
-          + Add to job
-        </button>
+        <div className="mt-6 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="min-h-[48px] flex-1 rounded-xl bg-white font-body font-medium text-black"
+          >
+            + Add to job
+          </button>
+          <button
+            type="button"
+            onClick={onNudge}
+            className="flex min-h-[48px] items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]"
+          >
+            <MessageCircle size={18} strokeWidth={1.5} />
+            Ask Nudge
+          </button>
+        </div>
+      )}
+
+      {!inPhotoFlow && (
+        <div className="mt-4 flex gap-2">
+          <button type="button" onClick={() => setActiveTab('timeline')} className={tabClass('timeline')}>
+            Timeline
+          </button>
+          <button type="button" onClick={() => setActiveTab('invoices')} className={tabClass('invoices')}>
+            Invoices
+          </button>
+          <button type="button" onClick={() => setActiveTab('quotes')} className={tabClass('quotes')}>
+            Quotes
+          </button>
+        </div>
       )}
 
       <div className="mt-6">
-        {job.timeline.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="font-body text-[var(--color-text-tertiary)]">No entries yet.</p>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              className="mt-2 font-body text-[var(--color-text-secondary)] underline"
-            >
-              Add your first note →
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {job.timeline.map((entry) => (
-              <TimelineItem
-                key={entry.id}
-                entry={entry}
-                polishLoading={polishLoading && polishId === entry.id}
-                onPolish={() => void handlePolish(entry)}
-                onOpenDoc={() => onOpenDoc(entry)}
-              />
-            ))}
-          </div>
+        {activeTab === 'timeline' && (
+          <>
+            {job.timeline.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="font-body text-[var(--color-text-tertiary)]">No entries yet.</p>
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  className="mt-2 font-body text-[var(--color-text-secondary)] underline"
+                >
+                  Add your first note →
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {job.timeline.map((entry) => (
+                  <TimelineItem
+                    key={entry.id}
+                    entry={entry}
+                    polishLoading={polishLoading && polishId === entry.id}
+                    onPolish={() => void handlePolish(entry)}
+                    onOpenDoc={() => onOpenDoc(entry)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'invoices' && (
+          <>
+            {sortedInvoices.length === 0 ? (
+              <p className="py-8 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
+                No invoices for this job yet.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {sortedInvoices.map((inv) => {
+                  const st = invoiceStatusStyle[inv.status] ?? invoiceStatusStyle.draft
+                  return (
+                    <button
+                      key={inv.id}
+                      type="button"
+                      onClick={() => onOpenMoneyRecord(inv)}
+                      className="flex w-full items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
+                    >
+                      <div>
+                        <p className="font-body text-[15px] text-[var(--color-text-primary)]">
+                          {inv.invoiceNumber ?? 'Invoice'}
+                        </p>
+                        <p className="font-display text-[15px] text-[var(--color-text-primary)]">
+                          ${inv.total.toLocaleString()}
+                        </p>
+                        {inv.dueDate && (
+                          <p className="font-body text-[12px] text-[var(--color-text-tertiary)]">
+                            Due {inv.dueDate}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[11px] font-medium capitalize"
+                        style={{ background: st.bg, color: st.text }}
+                      >
+                        {inv.status}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'quotes' && (
+          <>
+            {sortedQuotes.length === 0 ? (
+              <p className="py-8 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
+                No quotes for this job yet.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {sortedQuotes.map((q) => {
+                  const st = invoiceStatusStyle[q.status] ?? invoiceStatusStyle.draft
+                  return (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => onOpenMoneyRecord(q)}
+                      className="flex w-full items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
+                    >
+                      <div>
+                        <p className="font-body text-[15px] text-[var(--color-text-primary)]">
+                          {q.invoiceNumber ?? 'Quote'}
+                        </p>
+                        <p className="font-display text-[15px] text-[var(--color-text-primary)]">
+                          ${q.total.toLocaleString()}
+                        </p>
+                        <p className="font-body text-[12px] text-[var(--color-text-tertiary)]">
+                          {formatDate(q.createdAt)}
+                        </p>
+                      </div>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[11px] font-medium capitalize"
+                        style={{ background: st.bg, color: st.text }}
+                      >
+                        {q.status}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 
       <JobActionDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onSelect={handleAction} />
+
+      <AnimatePresence>
+        {noteModalOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[80] bg-[rgba(0,0,0,0.75)]"
+              onClick={() => setNoteModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="fixed left-4 right-4 top-1/2 z-[81] max-w-lg -translate-y-1/2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6"
+            >
+              <div className="flex items-start justify-between">
+                <h2 className="font-display text-lg font-bold text-[var(--color-text-primary)]">Add note</h2>
+                <button
+                  type="button"
+                  onClick={() => setNoteModalOpen(false)}
+                  className="flex h-10 w-10 items-center justify-center"
+                  aria-label="Close"
+                >
+                  <X size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
+                </button>
+              </div>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                rows={6}
+                placeholder="Site note..."
+                className="mt-4 min-h-[140px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 font-body text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)]"
+              />
+              <button
+                type="button"
+                onClick={handleSaveNote}
+                className="mt-4 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
+              >
+                Save note
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

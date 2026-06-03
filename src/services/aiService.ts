@@ -1,7 +1,9 @@
 const AI_TIMEOUT = 30000
 
+export type ChatHistoryMessage = { role: 'user' | 'assistant'; content: string }
+
 export async function sendChatMessage(params: {
-  message: string
+  messages: ChatHistoryMessage[]
   trade?: string
   jobContext?: string
   signal?: AbortSignal
@@ -15,15 +17,80 @@ export async function sendChatMessage(params: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: params.message,
+        messages: params.messages,
         trade: params.trade,
         jobContext: params.jobContext,
+        stream: false,
       }),
       signal,
     })
     const data = await res.json()
     if (!res.ok || data.error) throw new Error(data.error || 'Request failed')
     return data.text as string
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
+export async function streamChatMessage(params: {
+  messages: ChatHistoryMessage[]
+  trade?: string
+  jobContext?: string
+  onToken: (token: string) => void
+  signal?: AbortSignal
+}): Promise<string> {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), AI_TIMEOUT)
+  const signal = params.signal ?? controller.signal
+
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: params.messages,
+        trade: params.trade,
+        jobContext: params.jobContext,
+        stream: true,
+      }),
+      signal,
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error((data as { error?: string }).error || 'Request failed')
+    }
+
+    const reader = res.body?.getReader()
+    if (!reader) throw new Error('No response body')
+
+    const decoder = new TextDecoder()
+    let fullText = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      const chunk = decoder.decode(value)
+      const lines = chunk.split('\n').filter((line) => line.startsWith('data: '))
+      for (const line of lines) {
+        const data = line.slice(6).trim()
+        if (data === '[DONE]') break
+        try {
+          const parsed = JSON.parse(data) as {
+            choices?: { delta?: { content?: string } }[]
+          }
+          const token = parsed.choices?.[0]?.delta?.content ?? ''
+          if (token) {
+            fullText += token
+            params.onToken(token)
+          }
+        } catch {
+          /* skip malformed SSE chunks */
+        }
+      }
+    }
+
+    return fullText
   } finally {
     window.clearTimeout(timeout)
   }
@@ -64,7 +131,7 @@ export async function generateDocument(params: {
   jobContext?: string
 }): Promise<string> {
   return sendChatMessage({
-    message: params.message,
+    messages: [{ role: 'user', content: params.message }],
     trade: params.trade,
     jobContext: params.jobContext,
   })

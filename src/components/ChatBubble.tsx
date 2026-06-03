@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown'
 import type { ChatMessage } from '../types'
 
 interface ChatBubbleProps {
@@ -22,9 +23,9 @@ export function ChatBubble({ message }: ChatBubbleProps) {
   return (
     <div className="flex justify-start">
       <div className="max-w-[90%] border-l-2 border-[var(--color-border-2)] pl-4">
-        <p className="font-body text-[15px] leading-relaxed text-[var(--color-text-primary)]">
-          {message.content}
-        </p>
+        <div className="nudge-markdown">
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+        </div>
       </div>
     </div>
   )

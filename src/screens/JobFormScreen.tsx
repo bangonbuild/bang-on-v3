@@ -14,11 +14,12 @@ interface JobFormScreenProps {
     address: string
     status: JobStatus
   }) => void
+  onDelete?: () => void
 }
 
 const statuses: JobStatus[] = ['active', 'on-hold', 'complete']
 
-export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
+export function JobFormScreen({ job, onBack, onSave, onDelete }: JobFormScreenProps) {
   const [name, setName] = useState(job?.name ?? '')
   const [client, setClient] = useState(job?.client ?? '')
   const [email, setEmail] = useState(job?.email ?? '')
@@ -26,6 +27,7 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
   const [address, setAddress] = useState(job?.address ?? '')
   const [status, setStatus] = useState<JobStatus>(job?.status ?? 'active')
   const [error, setError] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const handleSubmit = () => {
     if (!name.trim() || !client.trim() || !phone.trim()) {
@@ -42,14 +44,22 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
     })
   }
 
+  const handleDelete = () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true)
+      return
+    }
+    onDelete?.()
+  }
+
   const inputClass =
     'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-[var(--color-text-primary)]'
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
-          <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
+        <button type="button" onClick={onBack} className="flex h-12 w-12 items-center justify-center">
+          <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
         </button>
         <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">
           {job ? 'Edit job' : 'New job'}
@@ -80,7 +90,6 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
         </label>
         <div>
-          {/* TODO: wire Australia Post address lookup API */}
           <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
             Address
             <input
@@ -116,6 +125,23 @@ export function JobFormScreen({ job, onBack, onSave }: JobFormScreenProps) {
         >
           {job ? 'Save changes' : 'Create job'}
         </button>
+
+        {job && onDelete && (
+          <>
+            {confirmDelete && (
+              <p className="text-center font-body text-sm text-[var(--color-text-secondary)]">
+                Are you sure? This will permanently delete the job and all its data.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="min-h-[48px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] font-body text-[var(--color-danger)]"
+            >
+              {confirmDelete ? 'Confirm delete job' : 'Delete job'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

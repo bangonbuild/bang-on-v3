@@ -20,7 +20,7 @@ export function Toast({ message, type: _type, visible }: ToastProps) {
           className="fixed left-1/2 z-[100] max-w-[90%] -translate-x-1/2 rounded-full border border-[var(--color-border-2)] bg-[var(--color-surface-2)] px-5 py-3"
           style={{ bottom: `calc(${NAV_BOTTOM} + 0.75rem)` }}
         >
-          <p className="font-body text-[14px] text-[var(--color-text-primary)]">{message}</p>
+          <p className="text-center font-body text-[14px] text-[var(--color-text-primary)]">{message}</p>
         </motion.div>
       )}
     </AnimatePresence>

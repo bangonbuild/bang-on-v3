@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Camera, ChevronRight, FileText, ImageIcon, MessageCircle, ReceiptText, StickyNote } from 'lucide-react'
+import { Camera, ChevronRight, FileText, ImageIcon, ReceiptText, StickyNote } from 'lucide-react'
 import { Icon } from './Icon'
 
-export type JobAction = 'nudge' | 'note' | 'photo' | 'quote' | 'invoice' | 'photo-report'
+export type JobAction = 'note' | 'photo' | 'quote' | 'invoice' | 'photo-report'
 
 interface JobActionDrawerProps {
   open: boolean
@@ -10,8 +10,7 @@ interface JobActionDrawerProps {
   onSelect: (action: JobAction) => void
 }
 
-const actions: { action: JobAction; icon: typeof MessageCircle; label: string }[] = [
-  { action: 'nudge', icon: MessageCircle, label: 'Ask Nudge' },
+const actions: { action: JobAction; icon: typeof StickyNote; label: string }[] = [
   { action: 'note', icon: StickyNote, label: 'Add note' },
   { action: 'photo', icon: Camera, label: 'Add photo' },
   { action: 'quote', icon: ReceiptText, label: 'Quote' },

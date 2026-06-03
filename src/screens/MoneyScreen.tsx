@@ -9,6 +9,7 @@ interface MoneyScreenProps {
   invoices: MoneyRecord[]
   quotes: MoneyRecord[]
   onOpenRecord: (record: MoneyRecord) => void
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void
 }
 
 function formatMoney(n: number) {
@@ -85,16 +86,14 @@ function MoneyDashboard({ stats }: { stats: MoneyScreenProps['stats'] }) {
   )
 }
 
-export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScreenProps) {
+export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }: MoneyScreenProps) {
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <ScreenTitle>Money</ScreenTitle>
 
       <MoneyDashboard stats={stats} />
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Invoices
-      </p>
+      <p className="section-label mt-6">Invoices</p>
       {invoices.length === 0 ? (
         <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
           No invoices yet. Generate one from a job or the Toolbox.
@@ -107,9 +106,7 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScre
         </div>
       )}
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Quotes
-      </p>
+      <p className="section-label mt-6">Quotes</p>
       {quotes.length === 0 ? (
         <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
           No quotes yet. Generate one from a job or the Toolbox.
@@ -121,6 +118,44 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord }: MoneyScre
           ))}
         </div>
       )}
+
+      <p className="section-label mt-6">Connect accounting</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <AccountingCard
+          name="Xero"
+          description="Sync invoices and payments"
+          onConnect={() => showToast('Xero integration coming soon.', 'info')}
+        />
+        <AccountingCard
+          name="MYOB"
+          description="Sync invoices and payments"
+          onConnect={() => showToast('MYOB integration coming soon.', 'info')}
+        />
+      </div>
+    </div>
+  )
+}
+
+function AccountingCard({
+  name,
+  description,
+  onConnect,
+}: {
+  name: string
+  description: string
+  onConnect: () => void
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <p className="font-display text-lg font-bold text-[var(--color-text-primary)]">{name}</p>
+      <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">{description}</p>
+      <button
+        type="button"
+        onClick={onConnect}
+        className="mt-3 min-h-[36px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 font-body text-sm text-[var(--color-text-primary)]"
+      >
+        Connect →
+      </button>
     </div>
   )
 }

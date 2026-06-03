@@ -4,7 +4,6 @@ import { FeaturePlaceholder } from '../components/FeaturePlaceholder'
 import { ScreenTitle } from '../components/ScreenTitle'
 import { ToolCard } from '../components/ToolCard'
 import type { SavedPhotoReport } from '../types'
-import { NAV_PB } from '../utils/layout'
 import { formatDate } from '../utils/storage'
 
 interface ToolboxScreenProps {
@@ -29,22 +28,22 @@ export function ToolboxScreen({
   onSuggest,
 }: ToolboxScreenProps) {
   return (
-    <div className={`px-4 pt-6 ${NAV_PB}`}>
+    <div className={`overflow-y-auto px-4 pt-6 pb-24`}>
       <ScreenTitle>Toolbox</ScreenTitle>
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Tools
-      </p>
+      <p className="section-label mt-6">Tools</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <ToolCard title="Quote" subtitle="Fast quote, no job needed" icon={ReceiptText} onClick={onQuote} />
-        <ToolCard title="Invoice" subtitle="Bill your client" icon={FileText} onClick={onInvoice} />
         <ToolCard title="Measure & calculate" subtitle="Numbers sorted, fast" icon={Ruler} onClick={onMeasure} />
         <ToolCard title="Photo report" subtitle="Snap, write, share" icon={ImageIcon} onClick={onPhotoReport} />
       </div>
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Upcoming tools
-      </p>
+      <p className="section-label mt-6">Paperwork</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <ToolCard title="Quote" subtitle="Fast quote, no job needed" icon={ReceiptText} onClick={onQuote} />
+        <ToolCard title="Invoice" subtitle="Bill your client" icon={FileText} onClick={onInvoice} />
+      </div>
+
+      <p className="section-label mt-6">Coming soon</p>
       <div className="mt-2 flex flex-col gap-2">
         <FeaturePlaceholder
           icon={ClipboardList}
@@ -69,7 +68,7 @@ export function ToolboxScreen({
       <div className="mt-6">
         <p className="font-body text-[15px] text-[var(--color-text-primary)]">Got a tool idea?</p>
         <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">
-          We&apos;re building Bang On with tradies. Suggest a tool and we&apos;ll add it to the backlog.
+          We&apos;re building datum.ai with tradies. Suggest a tool and we&apos;ll add it to the backlog.
         </p>
         <button
           type="button"
@@ -80,9 +79,7 @@ export function ToolboxScreen({
         </button>
       </div>
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Photo reports
-      </p>
+      <p className="section-label mt-6">Recent photo reports</p>
       {photoReports.length === 0 ? (
         <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
           No photo reports yet.
@@ -107,7 +104,7 @@ export function ToolboxScreen({
                   {report.photos.length} photo{report.photos.length === 1 ? '' : 's'}
                 </p>
               </div>
-              <ChevronRight size={18} className="shrink-0 text-[var(--color-text-tertiary)]" />
+              <ChevronRight size={18} strokeWidth={1.5} className="shrink-0 text-[var(--color-text-tertiary)]" />
             </button>
           ))}
         </div>

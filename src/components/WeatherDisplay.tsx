@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Cloud, CloudRain, CloudSnow, Sun } from 'lucide-react'
+import { ChevronRight, Cloud, CloudRain, CloudSnow, Sun } from 'lucide-react'
 
 interface WeatherDisplayProps {
   temp: number | null
@@ -42,15 +42,16 @@ export function WeatherDisplay({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1.5 font-body text-[14px] text-[var(--color-text-secondary)]"
+      className="group flex min-h-[44px] items-center gap-1.5 font-body text-[14px] text-[var(--color-text-secondary)] hover:underline"
     >
       {loading ? (
-        <span>…</span>
+        <span className="weather-shimmer" aria-hidden />
       ) : (
         <>
-          <WeatherIcon size={16} strokeWidth={2} className="shrink-0" />
+          <WeatherIcon size={16} strokeWidth={1.5} className="shrink-0" />
           <span>{temp ?? '—'}°</span>
           <span>{label}</span>
+          <ChevronRight size={12} strokeWidth={1.5} className="text-[var(--color-text-tertiary)]" />
         </>
       )}
     </button>

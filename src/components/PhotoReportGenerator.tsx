@@ -1,4 +1,4 @@
-import { Loader2, X } from 'lucide-react'
+import { ArrowLeft, Loader2, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useRef, useState } from 'react'
 import { generateDocument, mapFetchError } from '../services/aiService'
@@ -34,7 +34,7 @@ function ReportBranding() {
       <span className="font-display text-[16px] font-bold text-black">{payment.businessName}</span>
     )
   }
-  return <span className="font-display text-[16px] font-bold text-black">Bang On</span>
+  return <span className="font-display text-[16px] font-bold text-black">datum.ai</span>
 }
 
 interface PhotoReportGeneratorProps {
@@ -206,8 +206,8 @@ Photos count: ${photos.length}`
 
   return (
     <div className={`fixed inset-0 z-[85] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-4 pt-6 ${NAV_PB}`}>
-      <button type="button" onClick={onClose} className="self-start font-body text-[var(--color-text-secondary)]">
-        Cancel
+      <button type="button" onClick={onClose} className="flex h-12 w-12 items-center justify-center self-start">
+        <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
       </button>
       <h2 className="font-display mt-4 text-xl font-bold text-[var(--color-text-primary)]">Photo report</h2>
       <input

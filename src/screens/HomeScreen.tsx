@@ -1,12 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Mic, Plus, ScanLine, UserCircle } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Mic, Plus, ScanLine, UserCircle2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import { NewsCard } from '../components/NewsCard'
 import { WeatherDisplay } from '../components/WeatherDisplay'
-import type { Job } from '../types'
+import type { Job, Profile } from '../types'
 import { NAV_PB } from '../utils/layout'
+import { loadJson, STORAGE_KEYS } from '../utils/storage'
+import { firstNameFromProfile, getWelcomeLine } from '../utils/welcome'
 
 const TAGLINES = [
   'AI-powered tradie tools.',
@@ -18,7 +20,14 @@ const TAGLINES = [
 
 interface HomeScreenProps {
   jobs: Job[]
-  weather: { temp: number | null; description: string; rainChance: number; loading: boolean }
+  weather: {
+    temp: number | null
+    weatherCode: number
+    windKmh: number
+    description: string
+    rainChance: number
+    loading: boolean
+  }
   onWeatherClick: () => void
   onSnap: () => void
   onSpeak: () => void
@@ -38,7 +47,18 @@ export function HomeScreen({
   onOpenSettings,
 }: HomeScreenProps) {
   const [taglineIndex, setTaglineIndex] = useState(0)
-  const activeJobs = jobs.filter((j) => j.status !== 'complete')
+  const profile = loadJson<Profile>(STORAGE_KEYS.profile, { name: '', phone: '', trade: 'Carpenter' })
+  const firstName = firstNameFromProfile(profile.name)
+  const hour = new Date().getHours()
+  const dynamicLine = getWelcomeLine(hour, weather.weatherCode, weather.windKmh)
+
+  const activeJobs = useMemo(
+    () =>
+      [...jobs]
+        .filter((j) => j.status !== 'complete')
+        .sort((a, b) => b.updatedAt - a.updatedAt),
+    [jobs],
+  )
 
   useEffect(() => {
     const t = window.setInterval(() => {
@@ -52,19 +72,18 @@ export function HomeScreen({
       <header>
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-display text-[28px] font-bold leading-none text-[var(--color-text-primary)]">
-            Bang On
+            datum.ai
           </h1>
           <button
             type="button"
             onClick={onOpenSettings}
-            className="flex shrink-0 items-center justify-center"
+            className="flex h-11 w-11 shrink-0 items-center justify-center"
             aria-label="Settings"
           >
-            <UserCircle
+            <UserCircle2
               size={28}
-              strokeWidth={2}
+              strokeWidth={1.5}
               className="text-[var(--color-text-primary)]"
-              style={{ shapeRendering: 'geometricPrecision' }}
             />
           </button>
         </div>
@@ -93,13 +112,20 @@ export function HomeScreen({
         </div>
       </header>
 
-      <div className="mt-10 grid grid-cols-2 gap-2">
+      <div className="mt-6">
+        <p className="font-display text-[24px] font-medium leading-tight text-[var(--color-text-primary)]">
+          {firstName ? `G'day ${firstName}.` : "G'day."}
+        </p>
+        <p className="mt-4 font-body text-[15px] text-[var(--color-text-secondary)]">{dynamicLine}</p>
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={onSnap}
           className="snap-speak-card rounded-xl p-5 text-left active:opacity-90"
         >
-          <ScanLine size={24} strokeWidth={2} className="snap-speak-icon" style={{ shapeRendering: 'geometricPrecision' }} />
+          <ScanLine size={24} strokeWidth={2} className="snap-speak-icon" />
           <p className="snap-speak-title font-display mt-3 text-lg font-bold">SNAP</p>
           <p className="snap-speak-subtitle mt-1 font-body text-[13px] opacity-60">Photo → site advice</p>
         </button>
@@ -108,15 +134,13 @@ export function HomeScreen({
           onClick={onSpeak}
           className="snap-speak-card rounded-xl p-5 text-left active:opacity-90"
         >
-          <Mic size={24} strokeWidth={2} className="snap-speak-icon" style={{ shapeRendering: 'geometricPrecision' }} />
+          <Mic size={24} strokeWidth={2} className="snap-speak-icon" />
           <p className="snap-speak-title font-display mt-3 text-lg font-bold">SPEAK</p>
           <p className="snap-speak-subtitle mt-1 font-body text-[13px] opacity-60">Ask with your voice</p>
         </button>
       </div>
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Your jobs
-      </p>
+      <p className="section-label mt-6">Your jobs</p>
       {activeJobs.length === 0 ? (
         <button
           type="button"
@@ -146,21 +170,11 @@ export function HomeScreen({
         </div>
       )}
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Tradie news
-      </p>
+      <p className="section-label mt-6">Tradie news</p>
       <div className="mt-2 flex flex-col gap-2">
         <NewsCard
           headline="New NCC requirements for residential builds — what you need to know before July"
           timestamp="2h ago"
-        />
-        <NewsCard
-          headline="Timber prices stabilise after 18 months of volatility, suppliers confirm"
-          timestamp="5h ago"
-        />
-        <NewsCard
-          headline="CFMEU crackdown — what site supervisors need to document from Monday"
-          timestamp="1d ago"
         />
       </div>
     </div>

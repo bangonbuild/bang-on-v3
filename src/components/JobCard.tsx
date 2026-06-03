@@ -1,4 +1,5 @@
 import type { Job } from '../types'
+import { formatRelativeTime } from '../utils/storage'
 
 interface JobCardProps {
   job: Job
@@ -28,17 +29,12 @@ export function JobCard({ job, onClick, compact = true }: JobCardProps) {
       }`}
     >
       <p className="font-body text-[15px] font-medium text-[var(--color-text-primary)]">{job.name}</p>
-      {!compact && (
-        <>
-          <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">
-            {job.client}
-          </p>
-          {job.address && (
-            <p className="font-body text-[13px] text-[var(--color-text-secondary)]">
-              {job.address}
-            </p>
-          )}
-        </>
+      <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">{job.client}</p>
+      <p className="mt-0.5 font-body text-[12px] text-[var(--color-text-tertiary)]">
+        Updated {formatRelativeTime(job.updatedAt)}
+      </p>
+      {!compact && job.address && (
+        <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">{job.address}</p>
       )}
       {job.attention && (
         <p className="mt-2 font-body text-xs text-[var(--color-text-primary)]">{job.attention}</p>

@@ -10,6 +10,7 @@ export interface ForecastDay {
 
 export interface WeatherData {
   temp: number | null
+  weatherCode: number
   description: string
   location: string
   windKmh: number
@@ -66,6 +67,7 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
 export function useWeather() {
   const [weather, setWeather] = useState<WeatherData>({
     temp: null,
+    weatherCode: 0,
     description: '',
     location: '',
     windKmh: 0,
@@ -88,7 +90,7 @@ export function useWeather() {
       const [location, res] = await Promise.all([
         reverseGeocode(latitude, longitude),
         fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`,
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Australia%2FSydney&current_weather=true&forecast_days=3`,
         ),
       ])
       if (!res.ok) throw new Error('Weather unavailable')
@@ -111,6 +113,7 @@ export function useWeather() {
 
       setWeather({
         temp,
+        weatherCode: code,
         description,
         location,
         windKmh,
@@ -125,6 +128,7 @@ export function useWeather() {
     } catch {
       setWeather({
         temp: 22,
+        weatherCode: 2,
         description: 'Partly cloudy',
         location: 'Sydney, NSW',
         windKmh: 15,

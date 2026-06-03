@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
 import { BottomNav } from './components/BottomNav'
+import { NudgeDrawer } from './components/NudgeDrawer'
 import { PhotoReportGenerator } from './components/PhotoReportGenerator'
 import { QuoteGenerator } from './components/QuoteGenerator'
 import { SnapDrawer } from './components/SnapDrawer'
@@ -21,7 +22,6 @@ import { JobFormScreen } from './screens/JobFormScreen'
 import { JobsScreen } from './screens/JobsScreen'
 import { MeasureScreen } from './screens/MeasureScreen'
 import { MoneyScreen } from './screens/MoneyScreen'
-import { NudgeScreen } from './screens/NudgeScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { SnapScreen } from './screens/SnapScreen'
 import { SuggestToolScreen } from './screens/SuggestToolScreen'
@@ -32,7 +32,6 @@ import { parseDocumentFromEntry, serializeDocument } from './utils/storage'
 
 type Overlay =
   | { type: 'none' }
-  | { type: 'nudge'; jobId?: string }
   | { type: 'snap'; mode: SnapMode; jobId?: string }
   | { type: 'job-detail'; jobId: string }
   | { type: 'job-form'; jobId?: string; returnToJobId?: string }
@@ -50,8 +49,10 @@ export default function App() {
   const [snapDrawerOpen, setSnapDrawerOpen] = useState(false)
   const [jobFilter, setJobFilter] = useState<JobFilter>('all')
   const [weatherOpen, setWeatherOpen] = useState(false)
+  const [nudgeOpen, setNudgeOpen] = useState(false)
+  const [nudgeJobId, setNudgeJobId] = useState<string | undefined>()
 
-  const { jobs, addJob, updateJob, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry, getJob } =
+  const { jobs, addJob, updateJob, deleteJob, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry, getJob } =
     useJobs()
   const { profile, payment, setProfile, setPayment } = useProfile()
   const { saveChat, clearChats } = useRecentChats()
@@ -103,11 +104,27 @@ export default function App() {
     }
   }, [overlay, goToJobDetail, closeOverlay])
 
+  const openNudge = useCallback((jobId?: string) => {
+    setNudgeJobId(jobId)
+    setNudgeOpen(true)
+  }, [])
+
+  const closeNudge = useCallback(() => {
+    setNudgeOpen(false)
+    setNudgeJobId(undefined)
+  }, [])
+
+  const toggleNudge = useCallback(() => {
+    if (nudgeOpen) closeNudge()
+    else openNudge()
+  }, [nudgeOpen, closeNudge, openNudge])
+
   const handleTabChange = useCallback(
     (newTab: TabId) => {
-      if (overlay.type !== 'none' && overlay.type !== 'nudge') {
+      if (overlay.type !== 'none') {
         setOverlay({ type: 'none' })
       }
+      setNudgeOpen(false)
       setTab(newTab)
     },
     [overlay.type],
@@ -157,7 +174,6 @@ export default function App() {
 
   const showMainContent =
     overlay.type === 'none' ||
-    overlay.type === 'nudge' ||
     overlay.type === 'job-detail' ||
     overlay.type === 'settings' ||
     overlay.type === 'support'
@@ -193,6 +209,7 @@ export default function App() {
             stats={stats}
             invoices={invoices}
             quotes={quotes}
+            showToast={showToast}
             onOpenRecord={(record) =>
               setOverlay({
                 type: 'quote',
@@ -221,18 +238,6 @@ export default function App() {
   }
 
   const renderOverlay = () => {
-    if (overlay.type === 'nudge') {
-      const job = overlay.jobId ? getJob(overlay.jobId) : undefined
-      return (
-        <NudgeScreen
-          job={job}
-          profile={profile}
-          onBack={closeOverlay}
-          onSaveChat={saveChat}
-          showToast={showToast}
-        />
-      )
-    }
     if (overlay.type === 'settings') {
       return (
         <motion.div
@@ -281,11 +286,21 @@ export default function App() {
         <JobDetailScreen
           job={job}
           profile={profile}
+          jobInvoices={invoices.filter((i) => i.jobId === job.id)}
+          jobQuotes={quotes.filter((q) => q.jobId === job.id)}
           onBack={closeOverlay}
           onEdit={() =>
             setOverlay({ type: 'job-form', jobId: job.id, returnToJobId: job.id })
           }
-          onNudge={() => setOverlay({ type: 'nudge', jobId: job.id })}
+          onNudge={() => openNudge(job.id)}
+          onOpenMoneyRecord={(record) =>
+            setOverlay({
+              type: 'quote',
+              docType: record.type,
+              jobId: job.id,
+              moneyRecordId: record.id,
+            })
+          }
           onQuote={() => setOverlay({ type: 'quote', docType: 'quote', jobId: job.id })}
           onInvoice={() => setOverlay({ type: 'quote', docType: 'invoice', jobId: job.id })}
           onPhotoReport={() => setOverlay({ type: 'photo-report', jobId: job.id })}
@@ -320,9 +335,11 @@ export default function App() {
             if (overlay.jobId) goToJobDetail(overlay.jobId)
             else closeOverlay()
           }}
-          onNavigateToNudge={() =>
-            setOverlay({ type: 'nudge', jobId: overlay.jobId })
-          }
+          onNavigateToNudge={() => {
+            const jobId = overlay.jobId
+            closeOverlay()
+            openNudge(jobId)
+          }}
           onAddToJob={
             overlay.jobId
               ? (analysis, imageUrl) => {
@@ -354,6 +371,16 @@ export default function App() {
               goToJobDetail(created.id)
             }
           }}
+          onDelete={
+            existing
+              ? () => {
+                  deleteJob(existing.id)
+                  showToast('Job deleted.', 'success')
+                  closeOverlay()
+                  setTab('jobs')
+                }
+              : undefined
+          }
         />
       )
     }
@@ -474,7 +501,10 @@ export default function App() {
       return (
         <MeasureScreen
           onBack={closeOverlay}
-          onNudge={() => setOverlay({ type: 'nudge' })}
+          onNudge={() => {
+            closeOverlay()
+            openNudge()
+          }}
         />
       )
     }
@@ -554,9 +584,18 @@ export default function App() {
             <BottomNav
               active={tab}
               onChange={handleTabChange}
-              onNudge={() => setOverlay({ type: 'nudge' })}
+              onNudge={toggleNudge}
+              nudgeOpen={nudgeOpen}
             />
           )}
+          <NudgeDrawer
+            open={nudgeOpen}
+            onClose={closeNudge}
+            job={nudgeJobId ? getJob(nudgeJobId) : undefined}
+            profile={profile}
+            onSaveChat={saveChat}
+            showToast={showToast}
+          />
           <Toast message={toastMessage} type={toastType} visible={toastVisible} />
         </motion.div>
       )}

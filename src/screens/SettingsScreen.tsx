@@ -51,6 +51,7 @@ export function SettingsScreen({
   onBack,
   onSupport,
 }: SettingsScreenProps) {
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'team' | 'app'>('profile')
   const [profileEditing, setProfileEditing] = useState(!hasProfileData(profile))
   const [paymentEditing, setPaymentEditing] = useState(!hasPaymentData(payment))
   const [draftProfile, setDraftProfile] = useState(profile)
@@ -100,6 +101,23 @@ export function SettingsScreen({
         <ScreenTitle>Settings</ScreenTitle>
       </header>
 
+      <div className="mt-4 flex gap-2">
+        {(['profile', 'team', 'app'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setSettingsTab(tab)}
+            className={`min-h-[36px] flex-1 rounded-full px-3 font-body text-sm capitalize ${
+              settingsTab === tab ? 'chip-active' : 'chip-inactive'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {settingsTab === 'profile' && (
+        <>
       <SectionHeader
         title="Profile"
         editing={profileEditing}
@@ -162,10 +180,13 @@ export function SettingsScreen({
           </p>
           <button
             type="button"
-            onClick={() => setProfileEditing(false)}
-            className="font-body text-sm text-[var(--color-text-secondary)]"
+            onClick={() => {
+              setDraftProfile(profile)
+              setProfileEditing(false)
+            }}
+            className="min-h-[48px] rounded-xl border border-[var(--color-border)] font-body text-[var(--color-text-secondary)]"
           >
-            Cancel
+            Discard changes
           </button>
           <button
             type="button"
@@ -234,10 +255,13 @@ export function SettingsScreen({
           )}
           <button
             type="button"
-            onClick={() => setPaymentEditing(false)}
-            className="font-body text-sm text-[var(--color-text-secondary)]"
+            onClick={() => {
+              setDraftPayment(payment)
+              setPaymentEditing(false)
+            }}
+            className="min-h-[48px] rounded-xl border border-[var(--color-border)] font-body text-[var(--color-text-secondary)]"
           >
-            Cancel
+            Discard changes
           </button>
           <button
             type="button"
@@ -262,10 +286,12 @@ export function SettingsScreen({
           logo={payment.logo}
         />
       )}
+        </>
+      )}
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Team
-      </p>
+      {settingsTab === 'team' && (
+        <>
+      <p className="section-label mt-6">Team</p>
       <p className="font-body text-[13px] text-[var(--color-text-secondary)]">
         Link to other tradies to share jobs and stay connected.
       </p>
@@ -322,10 +348,12 @@ export function SettingsScreen({
           ))}
         </div>
       )}
+        </>
+      )}
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        Appearance
-      </p>
+      {settingsTab === 'app' && (
+        <>
+      <p className="section-label mt-6">Appearance</p>
       <div className="mt-2 flex gap-2">
         {(['dark', 'light'] as const).map((t) => (
           <button
@@ -343,9 +371,7 @@ export function SettingsScreen({
         ))}
       </div>
 
-      <p className="font-display mt-6 text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        App
-      </p>
+      <p className="section-label mt-6">App</p>
       <button
         type="button"
         onClick={() => {
@@ -365,7 +391,9 @@ export function SettingsScreen({
       >
         Support
       </button>
-      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">Bang On v0.3.3</p>
+      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.8</p>
+        </>
+      )}
     </div>
   )
 }
@@ -383,9 +411,7 @@ function SectionHeader({
 }) {
   return (
     <div className="mt-6 flex items-center justify-between">
-      <p className="font-display text-[11px] tracking-[0.12em] text-[var(--color-text-tertiary)]">
-        {title}
-      </p>
+      <p className="section-label">{title}</p>
       {showEdit && !editing && (
         <button type="button" onClick={onEdit} className="font-body text-sm text-[var(--color-text-secondary)]">
           Edit

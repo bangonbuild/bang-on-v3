@@ -1,4 +1,4 @@
-import { Loader2, X } from 'lucide-react'
+import { ArrowLeft, Loader2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { QuoteOverlay } from './QuoteOverlay'
@@ -259,8 +259,8 @@ Keep it practical for a tradie. Australian English.`
 
   return (
     <div className={`fixed inset-0 z-[85] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-4 pt-6 ${NAV_PB}`}>
-      <button type="button" onClick={onClose} className="self-start font-body text-[var(--color-text-secondary)]">
-        Cancel
+      <button type="button" onClick={onClose} className="flex h-12 w-12 items-center justify-center self-start">
+        <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
       </button>
       <h2 className="font-display mt-4 text-xl font-bold text-[var(--color-text-primary)]">
         {isTimelineEdit ? `Edit ${type}` : `Generate ${type === 'quote' ? 'a quote' : 'an invoice'}`}
