@@ -73,7 +73,7 @@ export default function App() {
   const { reports: photoReports, addFromResult, deleteReport, getReport } = usePhotoReports()
 
   useEffect(() => {
-    const t = window.setTimeout(() => setSplash(false), 500)
+    const t = window.setTimeout(() => setSplash(false), 2500)
     return () => window.clearTimeout(t)
   }, [])
 
