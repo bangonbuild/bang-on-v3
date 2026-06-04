@@ -50,6 +50,12 @@ function buildSiteAdvisory(windKmh: number, rainChance: number, uv: number): str
   return 'Conditions look good for site work today.'
 }
 
+function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  return fetch(url, { signal: controller.signal }).finally(() => window.clearTimeout(timer))
+}
+
 function readCachedCoords(): { latitude: number; longitude: number; location: string } | null {
   try {
     const raw = sessionStorage.getItem(COORDS_CACHE_KEY)
@@ -61,6 +67,7 @@ function readCachedCoords(): { latitude: number; longitude: number; location: st
       at: number
     }
     if (Date.now() - at > COORDS_CACHE_MS) return null
+    if (!location || location === 'Location unavailable') return null
     return { latitude, longitude, location }
   } catch {
     return null
@@ -111,20 +118,63 @@ async function getIpCoords(): Promise<{
   latitude: number
   longitude: number
   location: string
-}> {
-  const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) })
-  if (!res.ok) throw new Error('ip lookup failed')
-  const data = await res.json()
-  const city = data.city as string | undefined
-  const region = data.region as string | undefined
-  return {
-    latitude: data.latitude as number,
-    longitude: data.longitude as number,
-    location: city && region ? `${city}, ${region}` : '',
+} | null> {
+  try {
+    const res = await fetchWithTimeout('https://ipwho.is/', 4000)
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      success?: boolean
+      latitude?: number
+      longitude?: number
+      city?: string
+      region?: string
+    }
+    if (!data.success || data.latitude == null || data.longitude == null) return null
+    const city = data.city?.trim() ?? ''
+    const region = data.region?.trim() ?? ''
+    return {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      location: city && region ? `${city}, ${region}` : city || region || '',
+    }
+  } catch {
+    return null
+  }
+}
+
+async function reverseGeocode(latitude: number, longitude: number): Promise<string> {
+  try {
+    const res = await fetchWithTimeout(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
+      5000,
+    )
+    if (!res.ok) return ''
+    const data = (await res.json()) as {
+      city?: string
+      locality?: string
+      principalSubdivision?: string
+    }
+    const city = data.city || data.locality || ''
+    const region = data.principalSubdivision || ''
+    if (city && region) return `${city}, ${region}`
+    return city || region || ''
+  } catch {
+    return ''
   }
 }
 
 const SYDNEY = { latitude: -33.8688, longitude: 151.2093, location: 'Sydney, NSW' }
+
+async function resolveLocationLabel(
+  latitude: number,
+  longitude: number,
+  ipHint?: string,
+): Promise<string> {
+  if (ipHint) return ipHint
+  const reversed = await reverseGeocode(latitude, longitude)
+  if (reversed) return reversed
+  return 'Near you'
+}
 
 async function resolveCoordinatesFast(): Promise<{
   latitude: number
@@ -134,19 +184,20 @@ async function resolveCoordinatesFast(): Promise<{
   const cached = readCachedCoords()
   if (cached) return cached
 
-  const ipP = getIpCoords().catch(() => null)
-  const gpsP = getGpsCoords(3500).catch(() => null)
+  const [ip, gps] = await Promise.all([
+    getIpCoords(),
+    getGpsCoords(3500).catch(() => null),
+  ])
 
-  let coords = await Promise.race([ipP, gpsP])
-  if (!coords) {
-    const [gps, ip] = await Promise.all([gpsP, ipP])
-    coords = gps ?? ip
-  }
-  if (!coords) coords = SYDNEY
+  let coords = gps ?? ip ?? SYDNEY
 
   if (!coords.location) {
-    const ip = await ipP
-    coords = { ...coords, location: ip?.location || 'Your location' }
+    const location = await resolveLocationLabel(
+      coords.latitude,
+      coords.longitude,
+      ip?.location,
+    )
+    coords = { ...coords, location }
   }
 
   writeCachedCoords(coords.latitude, coords.longitude, coords.location)
@@ -154,9 +205,9 @@ async function resolveCoordinatesFast(): Promise<{
 }
 
 async function fetchForecast(latitude: number, longitude: number) {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`,
-    { signal: AbortSignal.timeout(8000) },
+    8000,
   )
   if (!res.ok) throw new Error('Weather unavailable')
   return res.json()
@@ -190,6 +241,45 @@ function parseForecast(data: Record<string, unknown>) {
   return { temp, weatherCode: code, description, windKmh, feelsLike, uv, rainChance, forecast }
 }
 
+function fallbackForecast(location: string): WeatherData {
+  return {
+    temp: 22,
+    weatherCode: 2,
+    description: 'Partly cloudy',
+    location,
+    windKmh: 15,
+    rainChance: 20,
+    uv: 5,
+    feelsLike: 22,
+    forecast: [
+      {
+        date: new Date().toISOString().slice(0, 10),
+        high: 24,
+        low: 16,
+        rainChance: 20,
+        description: 'Partly cloudy',
+      },
+      {
+        date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+        high: 23,
+        low: 15,
+        rainChance: 30,
+        description: 'Showers',
+      },
+      {
+        date: new Date(Date.now() + 172800000).toISOString().slice(0, 10),
+        high: 25,
+        low: 17,
+        rainChance: 10,
+        description: 'Clear',
+      },
+    ],
+    siteAdvisory: 'Conditions look good for site work today.',
+    loading: false,
+    error: 'Could not load weather',
+  }
+}
+
 export function useWeather() {
   const [weather, setWeather] = useState<WeatherData>({
     temp: null,
@@ -208,11 +298,23 @@ export function useWeather() {
 
   const fetchWeather = useCallback(async () => {
     setWeather((w) => ({ ...w, loading: true, error: null }))
+
+    let latitude = SYDNEY.latitude
+    let longitude = SYDNEY.longitude
+    let location = SYDNEY.location
+
     try {
-      const { latitude, longitude, location } = await resolveCoordinatesFast()
+      const coords = await resolveCoordinatesFast()
+      latitude = coords.latitude
+      longitude = coords.longitude
+      location = coords.location
+    } catch {
+      /* keep Sydney defaults */
+    }
+
+    try {
       const data = await fetchForecast(latitude, longitude)
       const parsed = parseForecast(data)
-
       setWeather({
         ...parsed,
         location,
@@ -221,24 +323,7 @@ export function useWeather() {
         error: null,
       })
     } catch {
-      setWeather({
-        temp: 22,
-        weatherCode: 2,
-        description: 'Partly cloudy',
-        location: 'Location unavailable',
-        windKmh: 15,
-        rainChance: 20,
-        uv: 5,
-        feelsLike: 22,
-        forecast: [
-          { date: new Date().toISOString().slice(0, 10), high: 24, low: 16, rainChance: 20, description: 'Partly cloudy' },
-          { date: new Date(Date.now() + 86400000).toISOString().slice(0, 10), high: 23, low: 15, rainChance: 30, description: 'Showers' },
-          { date: new Date(Date.now() + 172800000).toISOString().slice(0, 10), high: 25, low: 17, rainChance: 10, description: 'Clear' },
-        ],
-        siteAdvisory: 'Conditions look good for site work today.',
-        loading: false,
-        error: 'Could not load weather',
-      })
+      setWeather(fallbackForecast(location))
     }
   }, [])
 
