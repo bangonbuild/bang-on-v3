@@ -10,11 +10,11 @@ interface BottomNavProps {
 
 const leftTabs: { id: TabId; label: string; icon: typeof House }[] = [
   { id: 'home', label: 'Home', icon: House },
-  { id: 'money', label: 'Money', icon: Banknote },
+  { id: 'toolbox', label: 'Toolbox', icon: Wrench },
 ]
 
 const rightTabs: { id: TabId; label: string; icon: typeof House }[] = [
-  { id: 'toolbox', label: 'Toolbox', icon: Wrench },
+  { id: 'money', label: 'Money', icon: Banknote },
   { id: 'jobs', label: 'Jobs', icon: Briefcase },
 ]
 
