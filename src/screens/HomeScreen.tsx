@@ -127,7 +127,7 @@ export function HomeScreen({
         >
           <ScanLine size={24} strokeWidth={2} className="snap-speak-icon" />
           <p className="snap-speak-title font-display mt-3 text-lg font-bold">SNAP</p>
-          <p className="snap-speak-subtitle mt-1 font-body text-[13px] opacity-60">Photo → site advice</p>
+          <p className="snap-speak-subtitle mt-1 font-body text-[13px] opacity-60">Photo site advice</p>
         </button>
         <button
           type="button"
