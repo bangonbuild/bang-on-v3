@@ -214,21 +214,6 @@ body,
   color: var(--color-bg);
 }
 
-@keyframes splash-cursor-blink {
-  0%,
-  45% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-.splash-cursor {
-  animation: splash-cursor-blink 1s step-end infinite;
-}
-
 @keyframes pulse-dot {
   0%,
   100% {
