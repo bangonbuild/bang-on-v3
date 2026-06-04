@@ -391,7 +391,7 @@ export function SettingsScreen({
       >
         Support
       </button>
-      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.8</p>
+      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.9</p>
         </>
       )}
     </div>

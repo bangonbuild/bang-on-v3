@@ -6,6 +6,7 @@ import { streamChatMessage, analyseImage, mapFetchError } from '../services/aiSe
 import type { ChatMessage, Job, PendingChat, Profile } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
 import { buildJobContext } from '../utils/jobHelpers'
+import { NUDGE_INPUT_BOTTOM } from '../utils/layout'
 import { STORAGE_KEYS } from '../utils/storage'
 
 interface NudgeScreenProps {
@@ -166,10 +167,9 @@ export function NudgeScreen({
 
   const name = firstName(profile.name)
   const welcomeLine = name ? `G'day ${name}.` : "G'day."
-  const inputBottomPx = 26
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className={`flex min-h-0 flex-col ${embedded ? 'flex-1' : 'h-full'}`}>
       {!embedded && onBack && (
         <header className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-4">
           <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">Ask Nudge</h1>
@@ -217,7 +217,7 @@ export function NudgeScreen({
 
       <div
         className="shrink-0 px-4 pt-2"
-        style={{ paddingBottom: inputBottomPx }}
+        style={{ paddingBottom: embedded ? NUDGE_INPUT_BOTTOM : '26px' }}
       >
         {imagePreview && (
           <div className="mb-2 flex items-center gap-2">
