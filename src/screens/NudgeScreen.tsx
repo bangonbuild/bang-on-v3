@@ -166,9 +166,10 @@ export function NudgeScreen({
 
   const name = firstName(profile.name)
   const welcomeLine = name ? `G'day ${name}.` : "G'day."
+  const inputBottomPx = 26
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {!embedded && onBack && (
         <header className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-4">
           <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">Ask Nudge</h1>
@@ -178,10 +179,7 @@ export function NudgeScreen({
         </header>
       )}
 
-      <div
-        className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
-        style={{ paddingBottom: embedded ? '7.5rem' : '6rem' }}
-      >
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         {messages.length === 0 && !loading && !streamingText && (
           <div className="flex min-h-[30vh] flex-col items-center justify-center text-center">
             <div className="pulse-dot mb-4" />
@@ -217,7 +215,10 @@ export function NudgeScreen({
         <div ref={bottomRef} />
       </div>
 
-      <div className="absolute bottom-[26px] left-4 right-4 z-10">
+      <div
+        className="shrink-0 px-4 pt-2"
+        style={{ paddingBottom: inputBottomPx }}
+      >
         {imagePreview && (
           <div className="mb-2 flex items-center gap-2">
             <img src={imagePreview} alt="" className="h-12 w-12 rounded-lg object-cover" />
