@@ -71,7 +71,7 @@ export function HomeScreen({
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display text-[28px] font-bold leading-none text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[28px] font-semibold leading-none text-[var(--color-text-primary)]">
             datum.ai
           </h1>
           <button
@@ -87,7 +87,7 @@ export function HomeScreen({
             />
           </button>
         </div>
-        <div className="relative mt-1 h-5 overflow-hidden">
+        <div className="relative -mt-3 h-5 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.p
               key={taglineIndex}
@@ -112,8 +112,8 @@ export function HomeScreen({
         </div>
       </header>
 
-      <div className="mt-6">
-        <p className="font-display text-[24px] font-medium leading-tight text-[var(--color-text-primary)]">
+      <div className="mt-2">
+        <p className="font-display text-[24px] font-semibold leading-tight text-[var(--color-text-primary)]">
           {firstName ? `G'day ${firstName}.` : "G'day."}
         </p>
         <p className="mt-4 font-body text-[15px] text-[var(--color-text-secondary)]">{dynamicLine}</p>

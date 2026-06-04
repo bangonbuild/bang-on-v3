@@ -42,7 +42,7 @@ export function WeatherDisplay({
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-h-[44px] items-center gap-1.5 font-body text-[14px] text-[var(--color-text-secondary)] hover:underline"
+      className="group flex min-h-[44px] items-center gap-1.5 font-display text-[14px] text-[var(--color-text-secondary)] hover:underline"
     >
       {loading ? (
         <span className="weather-shimmer" aria-hidden />

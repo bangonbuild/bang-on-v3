@@ -64,6 +64,53 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
   }
 }
 
+async function resolveCoordinates(): Promise<{
+  latitude: number
+  longitude: number
+  location: string
+}> {
+  try {
+    const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        timeout: 10000,
+        maximumAge: 300000,
+      })
+    })
+    const { latitude, longitude } = pos.coords
+    const location = await reverseGeocode(latitude, longitude)
+    return { latitude, longitude, location }
+  } catch {
+    try {
+      const res = await fetch('https://ipapi.co/json/')
+      if (res.ok) {
+        const data = await res.json()
+        const latitude = data.latitude as number
+        const longitude = data.longitude as number
+        const city = data.city as string
+        const region = data.region as string
+        return {
+          latitude,
+          longitude,
+          location: city && region ? `${city}, ${region}` : await reverseGeocode(latitude, longitude),
+        }
+      }
+    } catch {
+      /* fall through to default */
+    }
+    const latitude = -33.8688
+    const longitude = 151.2093
+    return { latitude, longitude, location: 'Sydney, NSW' }
+  }
+}
+
+async function fetchForecast(latitude: number, longitude: number) {
+  const res = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&current_weather=true&forecast_days=3`,
+  )
+  if (!res.ok) throw new Error('Weather unavailable')
+  return res.json()
+}
+
 export function useWeather() {
   const [weather, setWeather] = useState<WeatherData>({
     temp: null,
@@ -83,18 +130,8 @@ export function useWeather() {
   const fetchWeather = useCallback(async () => {
     setWeather((w) => ({ ...w, loading: true, error: null }))
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
-      })
-      const { latitude, longitude } = pos.coords
-      const [location, res] = await Promise.all([
-        reverseGeocode(latitude, longitude),
-        fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Australia%2FSydney&current_weather=true&forecast_days=3`,
-        ),
-      ])
-      if (!res.ok) throw new Error('Weather unavailable')
-      const data = await res.json()
+      const { latitude, longitude, location } = await resolveCoordinates()
+      const data = await fetchForecast(latitude, longitude)
       const temp = Math.round(data.current?.temperature_2m ?? 0)
       const code = data.current?.weather_code ?? 0
       const description = weatherCodeToDescription(code)
@@ -130,7 +167,7 @@ export function useWeather() {
         temp: 22,
         weatherCode: 2,
         description: 'Partly cloudy',
-        location: 'Sydney, NSW',
+        location: 'Location unavailable',
         windKmh: 15,
         rainChance: 20,
         uv: 5,
@@ -142,7 +179,7 @@ export function useWeather() {
         ],
         siteAdvisory: 'Conditions look good for site work today.',
         loading: false,
-        error: null,
+        error: 'Could not load weather',
       })
     }
   }, [])
