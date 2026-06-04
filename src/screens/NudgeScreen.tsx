@@ -217,7 +217,7 @@ export function NudgeScreen({
         <div ref={bottomRef} />
       </div>
 
-      <div className="absolute bottom-4 left-4 right-4 z-10">
+      <div className="absolute bottom-[26px] left-4 right-4 z-10">
         {imagePreview && (
           <div className="mb-2 flex items-center gap-2">
             <img src={imagePreview} alt="" className="h-12 w-12 rounded-lg object-cover" />
