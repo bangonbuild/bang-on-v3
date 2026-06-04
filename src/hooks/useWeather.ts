@@ -23,6 +23,9 @@ export interface WeatherData {
   error: string | null
 }
 
+const COORDS_CACHE_KEY = 'datum-weather-coords'
+const COORDS_CACHE_MS = 30 * 60 * 1000
+
 function weatherCodeToDescription(code: number): string {
   if (code === 0) return 'Clear'
   if (code <= 3) return 'Partly cloudy'
@@ -47,68 +50,144 @@ function buildSiteAdvisory(windKmh: number, rainChance: number, uv: number): str
   return 'Conditions look good for site work today.'
 }
 
-async function reverseGeocode(lat: number, lon: number): Promise<string> {
+function readCachedCoords(): { latitude: number; longitude: number; location: string } | null {
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
-      { headers: { 'Accept-Language': 'en-AU' } },
-    )
-    if (!res.ok) return 'Your location'
-    const data = await res.json()
-    const suburb = data.address?.suburb || data.address?.city || data.address?.town
-    const state = data.address?.state
-    if (suburb && state) return `${suburb}, ${state}`
-    return data.display_name?.split(',').slice(0, 2).join(',') || 'Your location'
+    const raw = sessionStorage.getItem(COORDS_CACHE_KEY)
+    if (!raw) return null
+    const { latitude, longitude, location, at } = JSON.parse(raw) as {
+      latitude: number
+      longitude: number
+      location: string
+      at: number
+    }
+    if (Date.now() - at > COORDS_CACHE_MS) return null
+    return { latitude, longitude, location }
   } catch {
-    return 'Your location'
+    return null
   }
 }
 
-async function resolveCoordinates(): Promise<{
+function writeCachedCoords(latitude: number, longitude: number, location: string) {
+  try {
+    sessionStorage.setItem(
+      COORDS_CACHE_KEY,
+      JSON.stringify({ latitude, longitude, location, at: Date.now() }),
+    )
+  } catch {
+    /* ignore */
+  }
+}
+
+function getGpsCoords(timeoutMs: number): Promise<{
   latitude: number
   longitude: number
   location: string
 }> {
-  try {
-    const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        timeout: 10000,
-        maximumAge: 300000,
-      })
-    })
-    const { latitude, longitude } = pos.coords
-    const location = await reverseGeocode(latitude, longitude)
-    return { latitude, longitude, location }
-  } catch {
-    try {
-      const res = await fetch('https://ipapi.co/json/')
-      if (res.ok) {
-        const data = await res.json()
-        const latitude = data.latitude as number
-        const longitude = data.longitude as number
-        const city = data.city as string
-        const region = data.region as string
-        return {
-          latitude,
-          longitude,
-          location: city && region ? `${city}, ${region}` : await reverseGeocode(latitude, longitude),
-        }
-      }
-    } catch {
-      /* fall through to default */
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('no geolocation'))
+      return
     }
-    const latitude = -33.8688
-    const longitude = 151.2093
-    return { latitude, longitude, location: 'Sydney, NSW' }
+    const timer = window.setTimeout(() => reject(new Error('gps timeout')), timeoutMs)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        window.clearTimeout(timer)
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          location: '',
+        })
+      },
+      () => {
+        window.clearTimeout(timer)
+        reject(new Error('gps denied'))
+      },
+      { timeout: timeoutMs, maximumAge: 600000, enableHighAccuracy: false },
+    )
+  })
+}
+
+async function getIpCoords(): Promise<{
+  latitude: number
+  longitude: number
+  location: string
+}> {
+  const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) })
+  if (!res.ok) throw new Error('ip lookup failed')
+  const data = await res.json()
+  const city = data.city as string | undefined
+  const region = data.region as string | undefined
+  return {
+    latitude: data.latitude as number,
+    longitude: data.longitude as number,
+    location: city && region ? `${city}, ${region}` : '',
   }
+}
+
+const SYDNEY = { latitude: -33.8688, longitude: 151.2093, location: 'Sydney, NSW' }
+
+async function resolveCoordinatesFast(): Promise<{
+  latitude: number
+  longitude: number
+  location: string
+}> {
+  const cached = readCachedCoords()
+  if (cached) return cached
+
+  const ipP = getIpCoords().catch(() => null)
+  const gpsP = getGpsCoords(3500).catch(() => null)
+
+  let coords = await Promise.race([ipP, gpsP])
+  if (!coords) {
+    const [gps, ip] = await Promise.all([gpsP, ipP])
+    coords = gps ?? ip
+  }
+  if (!coords) coords = SYDNEY
+
+  if (!coords.location) {
+    const ip = await ipP
+    coords = { ...coords, location: ip?.location || 'Your location' }
+  }
+
+  writeCachedCoords(coords.latitude, coords.longitude, coords.location)
+  return coords
 }
 
 async function fetchForecast(latitude: number, longitude: number) {
   const res = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&current_weather=true&forecast_days=3`,
+    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`,
+    { signal: AbortSignal.timeout(8000) },
   )
   if (!res.ok) throw new Error('Weather unavailable')
   return res.json()
+}
+
+function parseForecast(data: Record<string, unknown>) {
+  const temp = Math.round((data.current as { temperature_2m?: number })?.temperature_2m ?? 0)
+  const code = (data.current as { weather_code?: number })?.weather_code ?? 0
+  const description = weatherCodeToDescription(code)
+  const windKmh = Math.round(((data.current as { wind_speed_10m?: number })?.wind_speed_10m ?? 0) * 3.6)
+  const feelsLike = Math.round((data.current as { apparent_temperature?: number })?.apparent_temperature ?? temp)
+  const uv = Math.round((data.current as { uv_index?: number })?.uv_index ?? 0)
+  const hourly = data.hourly as { precipitation_probability?: number[] } | undefined
+  const rainChance = Math.round(hourly?.precipitation_probability?.[0] ?? 0)
+  const daily = data.daily as {
+    time?: string[]
+    temperature_2m_max?: number[]
+    temperature_2m_min?: number[]
+    precipitation_probability_max?: number[]
+    weather_code?: number[]
+  }
+
+  const forecast: ForecastDay[] = (daily?.time ?? []).slice(0, 3).map((date: string, i: number) => ({
+    date,
+    high: Math.round(daily?.temperature_2m_max?.[i] ?? 0),
+    low: Math.round(daily?.temperature_2m_min?.[i] ?? 0),
+    rainChance: Math.round(daily?.precipitation_probability_max?.[i] ?? 0),
+    description: weatherCodeToDescription(daily?.weather_code?.[i] ?? 0),
+  }))
+
+  return { temp, weatherCode: code, description, windKmh, feelsLike, uv, rainChance, forecast }
 }
 
 export function useWeather() {
@@ -130,35 +209,14 @@ export function useWeather() {
   const fetchWeather = useCallback(async () => {
     setWeather((w) => ({ ...w, loading: true, error: null }))
     try {
-      const { latitude, longitude, location } = await resolveCoordinates()
+      const { latitude, longitude, location } = await resolveCoordinatesFast()
       const data = await fetchForecast(latitude, longitude)
-      const temp = Math.round(data.current?.temperature_2m ?? 0)
-      const code = data.current?.weather_code ?? 0
-      const description = weatherCodeToDescription(code)
-      const windKmh = Math.round((data.current?.wind_speed_10m ?? 0) * 3.6)
-      const feelsLike = Math.round(data.current?.apparent_temperature ?? temp)
-      const uv = Math.round(data.current?.uv_index ?? 0)
-      const rainChance = Math.round(data.hourly?.precipitation_probability?.[0] ?? 0)
-
-      const forecast: ForecastDay[] = (data.daily?.time ?? []).slice(0, 3).map((date: string, i: number) => ({
-        date,
-        high: Math.round(data.daily.temperature_2m_max[i]),
-        low: Math.round(data.daily.temperature_2m_min[i]),
-        rainChance: Math.round(data.daily.precipitation_probability_max[i] ?? 0),
-        description: weatherCodeToDescription(data.daily.weather_code[i]),
-      }))
+      const parsed = parseForecast(data)
 
       setWeather({
-        temp,
-        weatherCode: code,
-        description,
+        ...parsed,
         location,
-        windKmh,
-        rainChance,
-        uv,
-        feelsLike,
-        forecast,
-        siteAdvisory: buildSiteAdvisory(windKmh, rainChance, uv),
+        siteAdvisory: buildSiteAdvisory(parsed.windKmh, parsed.rainChance, parsed.uv),
         loading: false,
         error: null,
       })

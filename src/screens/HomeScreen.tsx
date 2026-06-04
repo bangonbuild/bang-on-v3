@@ -87,7 +87,7 @@ export function HomeScreen({
             />
           </button>
         </div>
-        <div className="relative -mt-3 h-5 overflow-hidden">
+        <div className="relative mt-[10px] h-5 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.p
               key={taglineIndex}
@@ -101,7 +101,7 @@ export function HomeScreen({
             </motion.p>
           </AnimatePresence>
         </div>
-        <div className="mt-2">
+        <div className="mt-7">
           <WeatherDisplay
             temp={weather.temp}
             description={weather.description}
