@@ -101,7 +101,7 @@ export function HomeScreen({
             </motion.p>
           </AnimatePresence>
         </div>
-        <div className="mt-7">
+        <div className="mt-[34px]">
           <WeatherDisplay
             temp={weather.temp}
             description={weather.description}
