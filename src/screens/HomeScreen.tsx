@@ -87,7 +87,7 @@ export function HomeScreen({
             />
           </button>
         </div>
-        <div className="relative mt-[10px] h-5 overflow-hidden">
+        <div className="relative mt-0 h-5 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.p
               key={taglineIndex}
