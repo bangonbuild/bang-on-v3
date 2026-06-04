@@ -217,7 +217,7 @@ export function NudgeScreen({
 
       <div
         className="shrink-0 px-4 pt-2"
-        style={{ paddingBottom: embedded ? NUDGE_INPUT_BOTTOM : '34px' }}
+        style={{ paddingBottom: embedded ? NUDGE_INPUT_BOTTOM : 'calc(3.5rem + 12px)' }}
       >
         {imagePreview && (
           <div className="mb-2 flex items-center gap-2">

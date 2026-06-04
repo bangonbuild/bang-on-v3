@@ -580,14 +580,6 @@ export default function App() {
             )}
           </main>
 
-          {!hideNav && (
-            <BottomNav
-              active={tab}
-              onChange={handleTabChange}
-              onNudge={toggleNudge}
-              nudgeOpen={nudgeOpen}
-            />
-          )}
           <NudgeDrawer
             open={nudgeOpen}
             onClose={closeNudge}
@@ -596,6 +588,14 @@ export default function App() {
             onSaveChat={saveChat}
             showToast={showToast}
           />
+          {!hideNav && (
+            <BottomNav
+              active={tab}
+              onChange={handleTabChange}
+              onNudge={toggleNudge}
+              nudgeOpen={nudgeOpen}
+            />
+          )}
           <Toast message={toastMessage} type={toastType} visible={toastVisible} />
         </motion.div>
       )}

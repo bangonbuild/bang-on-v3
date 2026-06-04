@@ -63,12 +63,12 @@ export function BottomNav({ active, onChange, onNudge, nudgeOpen = false }: Bott
         {leftTabs.map((tab) => (
           <TabButton key={tab.id} {...tab} active={active === tab.id} onChange={onChange} />
         ))}
-        <div className="flex w-[72px] shrink-0 items-center justify-center">
+        <div className="relative z-[52] flex w-[72px] shrink-0 items-center justify-center">
           <button
             type="button"
             onClick={onNudge}
             aria-label={nudgeOpen ? 'Close Nudge' : 'Ask Nudge'}
-            className="nudge-fab flex h-14 w-14 items-center justify-center rounded-full border"
+            className="nudge-fab relative z-[52] flex h-14 w-14 items-center justify-center rounded-full border"
             style={{ marginTop: -12 }}
           >
             {/* IMPORTANT: never use transform or filter on these icons — causes blurring */}
