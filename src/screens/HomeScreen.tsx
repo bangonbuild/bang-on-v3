@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Camera,
   ChevronRight,
-  CircleUser,
+  UserCircle2,
   FileText,
   ImageIcon,
   Mic,
@@ -96,10 +96,9 @@ export function HomeScreen({
             className="flex h-11 w-11 shrink-0 items-center justify-center"
             aria-label="Settings"
           >
-            <CircleUser
+            <UserCircle2
               size={28}
-              fill="currentColor"
-              stroke="none"
+              strokeWidth={1.5}
               className="text-[var(--color-text-primary)]"
             />
           </button>
