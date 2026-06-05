@@ -1,5 +1,6 @@
 import { ArrowUp, Mic, Paperclip } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import { nudgeMarkdownComponents } from '../utils/markdownComponents'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatBubble } from '../components/ChatBubble'
 import { streamChatMessage, analyseImage, mapFetchError } from '../services/aiService'
@@ -198,7 +199,7 @@ export function NudgeScreen({
               <div className="max-w-[90%] border-l-2 border-[var(--color-border-2)] pl-4">
                 {streamingText ? (
                   <div className="nudge-markdown">
-                    <ReactMarkdown>{streamingText}</ReactMarkdown>
+                    <ReactMarkdown components={nudgeMarkdownComponents}>{streamingText}</ReactMarkdown>
                   </div>
                 ) : (
                   <div className="flex gap-1">

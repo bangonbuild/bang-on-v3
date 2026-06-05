@@ -1,8 +1,17 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, FileText, MapPin, MessageCircle, ReceiptText, StickyNote, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  FileText,
+  ImageIcon,
+  MapPin,
+  MessageCircle,
+  ReceiptText,
+  StickyNote,
+  X,
+} from 'lucide-react'
 import { useRef, useState } from 'react'
-import { Icon } from '../components/Icon'
 import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
+import { sortInvoices } from '../utils/invoiceSort'
 import { StatusBadge } from '../components/StatusBadge'
 import { streamChatMessage } from '../services/aiService'
 import type { Job, MoneyRecord, Profile, TimelineEntry } from '../types'
@@ -53,7 +62,7 @@ export function JobDetailScreen({
   onPhotoReport,
   onAddNote,
   onAddPhoto,
-  onUpdateEntry,
+  onUpdateEntry: _onUpdateEntry,
   onOpenDoc,
   showToast,
 }: JobDetailScreenProps) {
@@ -64,19 +73,13 @@ export function JobDetailScreen({
   const [photoStep, setPhotoStep] = useState<PhotoStep>('idle')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoCaption, setPhotoCaption] = useState('')
-  const [polishId, setPolishId] = useState<string | null>(null)
-  const [polishPreview, setPolishPreview] = useState<{ original: string; polished: string } | null>(null)
   const [polishLoading, setPolishLoading] = useState(false)
   const cameraRef = useRef<HTMLInputElement>(null)
   const libraryRef = useRef<HTMLInputElement>(null)
 
   const inPhotoFlow = photoStep !== 'idle'
 
-  const sortedInvoices = [...jobInvoices].sort((a, b) => {
-    const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
-    const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
-    return da - db
-  })
+  const sortedInvoices = sortInvoices(jobInvoices)
 
   const sortedQuotes = [...jobQuotes].sort((a, b) => b.createdAt - a.createdAt)
 
@@ -128,8 +131,8 @@ export function JobDetailScreen({
     setNoteModalOpen(false)
   }
 
-  const handlePolish = async (entry: TimelineEntry) => {
-    setPolishId(entry.id)
+  const handlePolishNote = async () => {
+    if (!noteText.trim()) return
     setPolishLoading(true)
     try {
       let polished = ''
@@ -137,7 +140,7 @@ export function JobDetailScreen({
         messages: [
           {
             role: 'user',
-            content: `Rewrite this site note professionally for a client-facing record. Keep it concise. Original: ${entry.content}`,
+            content: `Rewrite this site note professionally for a client-facing record. Keep it concise. Original: ${noteText.trim()}`,
           },
         ],
         trade: profile.trade,
@@ -145,9 +148,7 @@ export function JobDetailScreen({
           polished += t
         },
       })
-      setPolishPreview({ original: entry.content, polished })
-    } catch {
-      setPolishPreview(null)
+      if (polished) setNoteText(polished)
     } finally {
       setPolishLoading(false)
     }
@@ -198,7 +199,9 @@ export function JobDetailScreen({
           onClick={() => showToast('Map view coming soon.', 'info')}
           className="flex min-h-[100px] min-w-0 flex-[0.45] flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
         >
-          <Icon icon={MapPin} size={20} muted />
+          <span style={{ display: 'block' }}>
+            <MapPin size={20} strokeWidth={1.5} className="text-[var(--color-text-tertiary)]" />
+          </span>
           <span className="mt-2 font-body text-[11px] text-[var(--color-text-tertiary)]">Map view</span>
         </button>
       </div>
@@ -263,56 +266,21 @@ export function JobDetailScreen({
         </div>
       )}
 
-      {polishPreview && polishId && (
-        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <p className="font-body text-xs text-[var(--color-text-tertiary)]">Original</p>
-          <p className="font-body text-sm text-[var(--color-text-secondary)]">{polishPreview.original}</p>
-          <p className="mt-3 font-body text-xs text-[var(--color-text-tertiary)]">Polished</p>
-          <p className="font-body text-sm text-[var(--color-text-primary)]">{polishPreview.polished}</p>
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                onUpdateEntry(polishId, {
-                  content: polishPreview.polished,
-                  polishedContent: polishPreview.polished,
-                })
-                setPolishPreview(null)
-                setPolishId(null)
-              }}
-              className="min-h-[40px] flex-1 rounded-lg btn-primary font-body text-sm"
-            >
-              Accept
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPolishPreview(null)
-                setPolishId(null)
-              }}
-              className="min-h-[40px] flex-1 rounded-lg border border-[var(--color-border)] font-body text-sm text-[var(--color-text-primary)]"
-            >
-              Discard
-            </button>
-          </div>
-        </div>
-      )}
-
       {!inPhotoFlow && (
-        <div className="mt-6 flex gap-2">
+        <div className="mt-6 flex items-stretch gap-2">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="min-h-[48px] flex-1 rounded-xl bg-white font-body font-medium text-black"
+            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-white font-body font-medium text-black"
           >
             + Add to job
           </button>
           <button
             type="button"
             onClick={onNudge}
-            className="flex min-h-[48px] items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]"
+            className="flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]"
           >
-            <MessageCircle size={18} strokeWidth={1.5} />
+            <MessageCircle size={18} strokeWidth={1.5} style={{ display: 'block' }} />
             Ask Nudge
           </button>
         </div>
@@ -349,13 +317,7 @@ export function JobDetailScreen({
             ) : (
               <div className="flex flex-col gap-3">
                 {job.timeline.map((entry) => (
-                  <TimelineItem
-                    key={entry.id}
-                    entry={entry}
-                    polishLoading={polishLoading && polishId === entry.id}
-                    onPolish={() => void handlePolish(entry)}
-                    onOpenDoc={() => onOpenDoc(entry)}
-                  />
+                  <TimelineItem key={entry.id} entry={entry} onOpenDoc={() => onOpenDoc(entry)} />
                 ))}
               </div>
             )}
@@ -487,13 +449,24 @@ export function JobDetailScreen({
                 placeholder="Site note..."
                 className="mt-4 min-h-[140px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 font-body text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)]"
               />
-              <button
-                type="button"
-                onClick={handleSaveNote}
-                className="mt-4 min-h-[48px] w-full rounded-xl bg-white font-body font-medium text-black"
-              >
-                Save note
-              </button>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handlePolishNote()}
+                  disabled={!noteText.trim() || polishLoading}
+                  className="flex h-12 flex-1 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-[var(--color-text-primary)] disabled:opacity-50"
+                >
+                  {polishLoading ? 'Polishing...' : 'Polish with Nudge'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  disabled={!noteText.trim()}
+                  className="flex h-12 flex-1 items-center justify-center rounded-xl bg-white font-body font-medium text-black disabled:opacity-50"
+                >
+                  Save note
+                </button>
+              </div>
             </motion.div>
           </>
         )}
@@ -504,16 +477,17 @@ export function JobDetailScreen({
 
 function TimelineItem({
   entry,
-  polishLoading,
-  onPolish,
   onOpenDoc,
 }: {
   entry: TimelineEntry
-  polishLoading: boolean
-  onPolish: () => void
   onOpenDoc: () => void
 }) {
-  const DocIcon = entry.type === 'quote' ? ReceiptText : FileText
+  const iconProps = {
+    size: 18 as const,
+    strokeWidth: 1.5 as const,
+    className: 'text-[var(--color-text-secondary)]',
+    style: { display: 'block' as const },
+  }
 
   if (entry.type === 'photo' && entry.imageUrl) {
     return (
@@ -536,7 +510,13 @@ function TimelineItem({
         onClick={onOpenDoc}
         className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
       >
-        <Icon icon={DocIcon} size={18} muted />
+        <span style={{ display: 'block' }}>
+          {entry.type === 'quote' ? (
+            <ReceiptText {...iconProps} />
+          ) : (
+            <FileText {...iconProps} />
+          )}
+        </span>
         <div>
           <p className="font-body capitalize text-[var(--color-text-primary)]">
             {entry.type} — ${entry.amount?.toLocaleString() ?? '0'}
@@ -549,23 +529,29 @@ function TimelineItem({
     )
   }
 
+  if (entry.type === 'photo-report') {
+    return (
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <span style={{ display: 'block' }}>
+          <ImageIcon {...iconProps} />
+        </span>
+        <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">Photo report</p>
+        <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
+          {formatRelativeTime(entry.timestamp)}
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <Icon icon={StickyNote} size={16} muted />
+      <span style={{ display: 'block' }}>
+        <StickyNote {...iconProps} />
+      </span>
       <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
       <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
         {formatRelativeTime(entry.timestamp)}
       </p>
-      {entry.type === 'note' && (
-        <button
-          type="button"
-          onClick={onPolish}
-          disabled={polishLoading}
-          className="mt-2 font-body text-sm text-[var(--color-text-secondary)]"
-        >
-          {polishLoading ? 'Polishing...' : 'Polish with Nudge'}
-        </button>
-      )}
     </div>
   )
 }

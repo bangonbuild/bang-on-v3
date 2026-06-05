@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { ScreenTitle } from '../components/ScreenTitle'
 import type { MoneyRecord } from '../types'
 import { isInvoiceOverdue } from '../utils/moneyHelpers'
+import { sortInvoices } from '../utils/invoiceSort'
 import { NAV_PB } from '../utils/layout'
+import { formatDate } from '../utils/storage'
 
 interface MoneyScreenProps {
   stats: { outstanding: number; overdue: number; paidThisMonth: number }
@@ -86,40 +89,10 @@ function MoneyDashboard({ stats }: { stats: MoneyScreenProps['stats'] }) {
   )
 }
 
-export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }: MoneyScreenProps) {
+function ConnectTheBooks({ showToast }: { showToast: MoneyScreenProps['showToast'] }) {
   return (
-    <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <ScreenTitle>Money</ScreenTitle>
-
-      <MoneyDashboard stats={stats} />
-
-      <p className="section-label mt-6">Invoices</p>
-      {invoices.length === 0 ? (
-        <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
-          No invoices yet. Generate one from a job or the Toolbox.
-        </p>
-      ) : (
-        <div className="mt-2 flex flex-col gap-2">
-          {invoices.map((inv) => (
-            <MoneyRow key={inv.id} record={inv} type="invoice" onOpen={() => onOpenRecord(inv)} />
-          ))}
-        </div>
-      )}
-
-      <p className="section-label mt-6">Quotes</p>
-      {quotes.length === 0 ? (
-        <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
-          No quotes yet. Generate one from a job or the Toolbox.
-        </p>
-      ) : (
-        <div className="mt-2 flex flex-col gap-2">
-          {quotes.map((q) => (
-            <MoneyRow key={q.id} record={q} type="quote" onOpen={() => onOpenRecord(q)} />
-          ))}
-        </div>
-      )}
-
-      <p className="section-label mt-6">Connect accounting</p>
+    <>
+      <p className="section-label mt-6">Connect the books</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <AccountingCard
           name="Xero"
@@ -132,6 +105,68 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }
           onConnect={() => showToast('MYOB integration coming soon.', 'info')}
         />
       </div>
+    </>
+  )
+}
+
+export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }: MoneyScreenProps) {
+  const [tab, setTab] = useState<'invoices' | 'quotes'>('invoices')
+  const sortedInvoices = sortInvoices(invoices)
+  const sortedQuotes = [...quotes].sort((a, b) => b.createdAt - a.createdAt)
+
+  const tabClass = (t: 'invoices' | 'quotes') =>
+    `min-h-[36px] flex-1 rounded-full px-3 font-body text-sm capitalize ${
+      tab === t ? 'chip-active' : 'chip-inactive'
+    }`
+
+  return (
+    <div className={`px-4 pt-6 ${NAV_PB}`}>
+      <ScreenTitle>Money</ScreenTitle>
+
+      <MoneyDashboard stats={stats} />
+
+      <div className="mt-4 flex gap-2">
+        <button type="button" onClick={() => setTab('invoices')} className={tabClass('invoices')}>
+          Invoices
+        </button>
+        <button type="button" onClick={() => setTab('quotes')} className={tabClass('quotes')}>
+          Quotes
+        </button>
+      </div>
+
+      {tab === 'invoices' && (
+        <>
+          {sortedInvoices.length === 0 ? (
+            <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
+              No invoices yet. Generate one from a job or the Toolbox.
+            </p>
+          ) : (
+            <div className="mt-2 flex flex-col gap-2">
+              {sortedInvoices.map((inv) => (
+                <MoneyRow key={inv.id} record={inv} type="invoice" onOpen={() => onOpenRecord(inv)} />
+              ))}
+            </div>
+          )}
+          <ConnectTheBooks showToast={showToast} />
+        </>
+      )}
+
+      {tab === 'quotes' && (
+        <>
+          {sortedQuotes.length === 0 ? (
+            <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
+              No quotes yet. Generate one from a job or the Toolbox.
+            </p>
+          ) : (
+            <div className="mt-2 flex flex-col gap-2">
+              {sortedQuotes.map((q) => (
+                <MoneyRow key={q.id} record={q} type="quote" onOpen={() => onOpenRecord(q)} />
+              ))}
+            </div>
+          )}
+          <ConnectTheBooks showToast={showToast} />
+        </>
+      )}
     </div>
   )
 }
@@ -194,8 +229,13 @@ function MoneyRow({
             Due {formatDue(record.dueDate)}
           </p>
         )}
+        {type === 'quote' && (
+          <p className="mt-1 font-body text-[12px] text-[var(--color-text-tertiary)]">
+            {formatDate(record.createdAt)}
+          </p>
+        )}
       </div>
-      <ChevronRight size={18} className="shrink-0 text-[var(--color-text-tertiary)]" />
+      <ChevronRight size={18} strokeWidth={1.5} className="shrink-0 text-[var(--color-text-tertiary)]" />
     </button>
   )
 }

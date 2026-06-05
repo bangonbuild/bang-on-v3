@@ -1,5 +1,16 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Mic, Plus, ScanLine, UserCircle2 } from 'lucide-react'
+import {
+  Camera,
+  ChevronRight,
+  CircleUser,
+  FileText,
+  ImageIcon,
+  Mic,
+  Plus,
+  ReceiptText,
+  ScanLine,
+  StickyNote,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
@@ -8,7 +19,9 @@ import { WeatherDisplay } from '../components/WeatherDisplay'
 import type { Job, Profile } from '../types'
 import { NAV_PB } from '../utils/layout'
 import { loadJson, STORAGE_KEYS } from '../utils/storage'
+import { getRecentActivity } from '../utils/recentActivity'
 import { firstNameFromProfile, getWelcomeLine } from '../utils/welcome'
+import type { TimelineEntryType } from '../types'
 
 const TAGLINES = [
   'AI-powered tradie tools.',
@@ -49,8 +62,11 @@ export function HomeScreen({
   const [taglineIndex, setTaglineIndex] = useState(0)
   const profile = loadJson<Profile>(STORAGE_KEYS.profile, { name: '', phone: '', trade: 'Carpenter' })
   const firstName = firstNameFromProfile(profile.name)
-  const hour = new Date().getHours()
-  const dynamicLine = getWelcomeLine(hour, weather.weatherCode, weather.windKmh)
+  const dynamicLine = !weather.loading
+    ? getWelcomeLine(weather.weatherCode, weather.windKmh)
+    : null
+
+  const recentActivity = useMemo(() => getRecentActivity(jobs, 4), [jobs])
 
   const activeJobs = useMemo(
     () =>
@@ -80,9 +96,10 @@ export function HomeScreen({
             className="flex h-11 w-11 shrink-0 items-center justify-center"
             aria-label="Settings"
           >
-            <UserCircle2
+            <CircleUser
               size={28}
-              strokeWidth={1.5}
+              fill="currentColor"
+              stroke="none"
               className="text-[var(--color-text-primary)]"
             />
           </button>
@@ -116,7 +133,9 @@ export function HomeScreen({
         <p className="font-display text-[24px] font-semibold leading-tight text-[var(--color-text-primary)]">
           {firstName ? `G'day ${firstName}.` : "G'day."}
         </p>
-        <p className="mt-4 font-body text-[15px] text-[var(--color-text-secondary)]">{dynamicLine}</p>
+        {dynamicLine && (
+          <p className="mt-4 font-body text-[15px] text-[var(--color-text-secondary)]">{dynamicLine}</p>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-2">
@@ -177,6 +196,55 @@ export function HomeScreen({
           timestamp="2h ago"
         />
       </div>
+
+      <p className="section-label mt-6">Recent activity</p>
+      {recentActivity.length === 0 ? (
+        <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
+          No recent activity. Start by creating a job.
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-col gap-2">
+          {recentActivity.map((item) => (
+            <button
+              key={`${item.jobId}-${item.id}`}
+              type="button"
+              onClick={() => onJob(item.jobId)}
+              className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
+            >
+              <ActivityIcon type={item.type} />
+              <div className="min-w-0 flex-1">
+                <p className="font-body text-[14px] text-[var(--color-text-primary)]">{item.description}</p>
+                <p className="font-body text-[12px] text-[var(--color-text-tertiary)]">{item.timeLabel}</p>
+              </div>
+              <ChevronRight size={18} strokeWidth={1.5} className="shrink-0 text-[var(--color-text-tertiary)]" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
+}
+
+function ActivityIcon({ type }: { type: TimelineEntryType }) {
+  const iconProps = {
+    size: 18 as const,
+    strokeWidth: 1.5 as const,
+    className: 'shrink-0 text-[var(--color-text-secondary)]',
+    style: { display: 'block' as const },
+  }
+
+  switch (type) {
+    case 'note':
+      return <StickyNote {...iconProps} />
+    case 'photo':
+      return <Camera {...iconProps} />
+    case 'quote':
+      return <ReceiptText {...iconProps} />
+    case 'invoice':
+      return <FileText {...iconProps} />
+    case 'photo-report':
+      return <ImageIcon {...iconProps} />
+    default:
+      return <StickyNote {...iconProps} />
+  }
 }

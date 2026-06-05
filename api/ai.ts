@@ -38,7 +38,10 @@ Formatting:
 - Use **bold** for important terms, standards references, and key numbers
 - Use bullet points for lists of steps or items
 - Use tables for comparisons or schedules where appropriate
-- Keep responses concise but well-structured`
+- Keep responses concise but well-structured
+
+When listing steps, items, or options — always use markdown bullet points (- item).
+Never write lists as comma-separated sentences when a bullet list would be clearer.`
 
 const buildSystemPrompt = (trade?: string, jobContext?: string): string => {
   let prompt = BASE_NUDGE_PROMPT

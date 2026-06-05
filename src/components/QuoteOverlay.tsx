@@ -1,4 +1,4 @@
-import { ChevronLeft, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { GeneratedDocument, PaymentDetails, QuoteLineItem } from '../types'
 import { NAV_PB } from '../utils/layout'
@@ -12,13 +12,14 @@ interface QuoteOverlayProps {
   onSave?: () => void
   showSave: boolean
   editMode?: boolean
+  viewMode?: boolean
   onDocChange?: (doc: GeneratedDocument) => void
   onSaveChanges?: () => void
+  onCancelEdit?: () => void
   onDelete?: () => void
   onEdit?: () => void
   onMarkPaid?: () => void
   onConvertToInvoice?: () => void
-  moneyMode?: boolean
   firstGenMode?: boolean
   onBackToEdit?: () => void
 }
@@ -29,8 +30,9 @@ function recalcDoc(doc: GeneratedDocument, lineItems: QuoteLineItem[]): Generate
   return { ...doc, lineItems, subtotal, gst, total: subtotal + gst }
 }
 
-const actionBtnClass =
-  'min-h-[48px] flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-sm text-[var(--color-text-primary)]'
+const btnBase = 'min-h-[48px] rounded-xl font-body text-sm'
+const surfaceBtn = `${btnBase} border border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-primary)]`
+const rowClass = 'flex gap-2'
 
 export function QuoteOverlay({
   doc,
@@ -41,13 +43,14 @@ export function QuoteOverlay({
   onSave,
   showSave,
   editMode = false,
+  viewMode = false,
   onDocChange,
   onSaveChanges,
+  onCancelEdit,
   onDelete,
   onEdit,
   onMarkPaid,
   onConvertToInvoice,
-  moneyMode = false,
   firstGenMode = false,
   onBackToEdit,
 }: QuoteOverlayProps) {
@@ -68,6 +71,80 @@ export function QuoteOverlay({
 
   const inputClass =
     'w-full rounded border border-black/15 bg-white px-2 py-1 font-body text-sm text-black'
+
+  const renderViewButtons = () => {
+    if (doc.type === 'invoice') {
+      return (
+        <div className="flex flex-col gap-2">
+          {onEdit && (
+            <button type="button" onClick={onEdit} className={`${surfaceBtn} w-full`}>
+              Edit
+            </button>
+          )}
+          <div className={rowClass}>
+            {onMarkPaid && (
+              <button
+                type="button"
+                onClick={onMarkPaid}
+                className={`${btnBase} flex-1`}
+                style={{ background: 'rgba(52,199,89,0.15)', color: '#34C759' }}
+              >
+                Mark as paid
+              </button>
+            )}
+            <button type="button" onClick={onShare} className={`${surfaceBtn} flex-1`}>
+              Share with client
+            </button>
+          </div>
+          <div className={rowClass}>
+            <button type="button" onClick={onDownload} className={`${surfaceBtn} flex-1`}>
+              Download
+            </button>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className={`${btnBase} flex-1`}
+                style={{ background: 'rgba(255,59,48,0.15)', color: '#FF3B30' }}
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex flex-col gap-2">
+        {onEdit && (
+          <button type="button" onClick={onEdit} className={`${surfaceBtn} w-full`}>
+            Edit
+          </button>
+        )}
+        <button type="button" onClick={onShare} className={`${surfaceBtn} w-full`}>
+          Share with client
+        </button>
+        <div className={rowClass}>
+          {onConvertToInvoice && (
+            <button type="button" onClick={onConvertToInvoice} className={`${surfaceBtn} flex-1`}>
+              Convert to invoice
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className={`${btnBase} flex-1`}
+              style={{ background: 'rgba(255,59,48,0.15)', color: '#FF3B30' }}
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <motion.div
@@ -211,23 +288,13 @@ export function QuoteOverlay({
             >
               Save changes
             </button>
-            <div className="flex gap-2">
-              <button type="button" onClick={onShare} className={actionBtnClass}>
-                Share with client
-              </button>
-              <button type="button" onClick={onDownload} className={actionBtnClass}>
-                Download
-              </button>
-            </div>
-            {onDelete && (
-              <button
-                type="button"
-                onClick={onDelete}
-                className="min-h-[48px] w-full rounded-xl border border-black/20 font-body text-sm text-red-600"
-              >
-                Delete {title.toLowerCase()}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onCancelEdit ?? onClose}
+              className={`${surfaceBtn} w-full`}
+            >
+              Cancel
+            </button>
           </>
         ) : firstGenMode ? (
           <>
@@ -235,20 +302,17 @@ export function QuoteOverlay({
               <button
                 type="button"
                 onClick={onBackToEdit}
-                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-sm text-black"
+                className={`${surfaceBtn} w-full`}
               >
-                <ChevronLeft size={18} />
                 Edit
               </button>
             )}
-            <div className="flex gap-2">
-              <button type="button" onClick={onShare} className={actionBtnClass}>
-                Share with client
-              </button>
-              <button type="button" onClick={onDownload} className={actionBtnClass}>
-                Download
-              </button>
-            </div>
+            <button type="button" onClick={onShare} className={`${surfaceBtn} w-full`}>
+              Share with client
+            </button>
+            <button type="button" onClick={onDownload} className={`${surfaceBtn} w-full`}>
+              Download
+            </button>
             {onSave && (
               <button
                 type="button"
@@ -259,48 +323,15 @@ export function QuoteOverlay({
               </button>
             )}
           </>
-        ) : moneyMode ? (
-          <>
-            <div className="flex flex-wrap gap-2">
-              {onEdit && (
-                <button type="button" onClick={onEdit} className={`${actionBtnClass} min-w-0`}>
-                  Edit
-                </button>
-              )}
-              {doc.type === 'invoice' && onMarkPaid && (
-                <button type="button" onClick={onMarkPaid} className={`${actionBtnClass} min-w-0`}>
-                  Mark as paid
-                </button>
-              )}
-              <button type="button" onClick={onShare} className={`${actionBtnClass} min-w-0`}>
-                Share with client
-              </button>
-              <button type="button" onClick={onDownload} className={`${actionBtnClass} min-w-0`}>
-                Download
-              </button>
-              {doc.type === 'quote' && onConvertToInvoice && (
-                <button type="button" onClick={onConvertToInvoice} className={`${actionBtnClass} min-w-0`}>
-                  Convert to invoice
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  type="button"
-                  onClick={onDelete}
-                  className="min-h-[48px] min-w-0 flex-1 rounded-xl border border-black/20 font-body text-sm text-red-600"
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          </>
+        ) : viewMode ? (
+          renderViewButtons()
         ) : (
           <>
-            <div className="flex gap-2">
-              <button type="button" onClick={onShare} className={actionBtnClass}>
+            <div className={rowClass}>
+              <button type="button" onClick={onShare} className={`${surfaceBtn} flex-1`}>
                 Share with client
               </button>
-              <button type="button" onClick={onDownload} className={actionBtnClass}>
+              <button type="button" onClick={onDownload} className={`${surfaceBtn} flex-1`}>
                 Download
               </button>
             </div>

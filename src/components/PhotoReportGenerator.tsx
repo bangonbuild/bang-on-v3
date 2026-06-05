@@ -1,6 +1,8 @@
 import { ArrowLeft, Loader2, X } from 'lucide-react'
 import { motion } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import { useRef, useState } from 'react'
+import { reportMarkdownComponents } from '../utils/markdownComponents'
 import { generateDocument, mapFetchError } from '../services/aiService'
 import type { Job, PaymentDetails, PhotoReportResult, Profile, SavedPhotoReport } from '../types'
 import { NAV_PB } from '../utils/layout'
@@ -97,7 +99,10 @@ export function PhotoReportGenerator({
     const prompt = `Write a site progress photo report for an Australian builder.
 Context: ${context || 'General site progress'}
 Describe each photo briefly, then a summary paragraph. Australian English. No emojis.
-Photos count: ${photos.length}`
+Photos count: ${photos.length}
+
+Format your response using markdown. Use **bold** for key observations.
+Use bullet points for lists of items. Write in clear Australian English.`
 
     try {
       const summary = await generateDocument({
@@ -163,7 +168,9 @@ Photos count: ${photos.length}`
               </div>
             ))}
           </div>
-          <p className="mt-6 font-body text-[15px] leading-relaxed">{report.summary}</p>
+          <div className="mt-6 font-body text-[15px] leading-relaxed">
+            <ReactMarkdown components={reportMarkdownComponents}>{report.summary}</ReactMarkdown>
+          </div>
         </div>
         <div className="fixed bottom-0 left-0 right-0 flex flex-col gap-2 border-t border-black/10 bg-white p-4">
           <div className="flex gap-2">

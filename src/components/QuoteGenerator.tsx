@@ -64,9 +64,10 @@ export function QuoteGenerator({
   onConvertToInvoice,
 }: QuoteGeneratorProps) {
   const [moneyEdit, setMoneyEdit] = useState(false)
-  const isTimelineEdit = Boolean(editEntryId && initialDoc)
-  const isMoneyView = Boolean(moneyRecord && !isTimelineEdit)
-  const [inputMode, setInputMode] = useState<InputMode>(isTimelineEdit ? 'build' : 'describe')
+  const [timelineEditMode, setTimelineEditMode] = useState(false)
+  const isTimelineView = Boolean(editEntryId && initialDoc)
+  const isMoneyView = Boolean(moneyRecord && !isTimelineView)
+  const [inputMode, setInputMode] = useState<InputMode>('describe')
   const [scope, setScope] = useState('')
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>(
     initialDoc?.lineItems?.length ? initialDoc.lineItems : [emptyLine()],
@@ -170,6 +171,7 @@ Keep it practical for a tradie. Australian English.`
     if (editEntryId && onUpdateEntry) {
       onUpdateEntry(editEntryId, doc)
       showToast('Changes saved.', 'success')
+      setTimelineEditMode(false)
       onClose()
       return
     }
@@ -178,6 +180,12 @@ Keep it practical for a tradie. Australian English.`
       showToast('Changes saved.', 'success')
       setMoneyEdit(false)
     }
+  }
+
+  const handleCancelEdit = () => {
+    if (initialDoc) setDoc({ ...initialDoc, lineItems: [...initialDoc.lineItems] })
+    setTimelineEditMode(false)
+    setMoneyEdit(false)
   }
 
   const handleDelete = () => {
@@ -193,7 +201,7 @@ Keep it practical for a tradie. Australian English.`
     }
   }
 
-  const isFirstGen = Boolean(doc && !isTimelineEdit && !isMoneyView && fromGeneration)
+  const isFirstGen = Boolean(doc && !isTimelineView && !isMoneyView && fromGeneration)
 
   const handleBackToEdit = () => {
     if (!doc) return
@@ -217,7 +225,8 @@ Keep it practical for a tradie. Australian English.`
   }
 
   if (doc) {
-    const editing = isTimelineEdit || (isMoneyView && moneyEdit)
+    const editing = (isTimelineView && timelineEditMode) || (isMoneyView && moneyEdit)
+    const inViewMode = (isTimelineView && !timelineEditMode) || (isMoneyView && !moneyEdit)
     return (
       <QuoteOverlay
         doc={doc}
@@ -228,15 +237,20 @@ Keep it practical for a tradie. Australian English.`
         onSave={isFirstGen ? handleFirstGenSave : undefined}
         showSave={false}
         editMode={editing}
+        viewMode={inViewMode && !isFirstGen}
         firstGenMode={isFirstGen}
         onBackToEdit={isFirstGen ? handleBackToEdit : undefined}
-        moneyMode={isMoneyView && !moneyEdit}
         onDocChange={editing ? setDoc : undefined}
         onSaveChanges={handleSaveChanges}
-        onDelete={editing || isMoneyView ? handleDelete : undefined}
-        onEdit={isMoneyView ? () => setMoneyEdit(true) : undefined}
+        onCancelEdit={handleCancelEdit}
+        onDelete={inViewMode || editing ? handleDelete : undefined}
+        onEdit={
+          inViewMode
+            ? () => (isTimelineView ? setTimelineEditMode(true) : setMoneyEdit(true))
+            : undefined
+        }
         onMarkPaid={
-          isMoneyView && moneyRecord?.type === 'invoice' && onMarkPaid
+          inViewMode && moneyRecord?.type === 'invoice' && onMarkPaid
             ? () => {
                 onMarkPaid(moneyRecord.id)
                 showToast('Marked as paid.', 'success')
@@ -245,7 +259,7 @@ Keep it practical for a tradie. Australian English.`
             : undefined
         }
         onConvertToInvoice={
-          isMoneyView && moneyRecord?.type === 'quote' && onConvertToInvoice
+          inViewMode && moneyRecord?.type === 'quote' && onConvertToInvoice
             ? () => {
                 onConvertToInvoice(moneyRecord.id)
                 showToast('Converted to invoice.', 'success')
@@ -263,10 +277,10 @@ Keep it practical for a tradie. Australian English.`
         <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
       </button>
       <h2 className="font-display mt-4 text-xl font-bold text-[var(--color-text-primary)]">
-        {isTimelineEdit ? `Edit ${type}` : `Generate ${type === 'quote' ? 'a quote' : 'an invoice'}`}
+        {`Generate ${type === 'quote' ? 'a quote' : 'an invoice'}`}
       </h2>
 
-      {!isTimelineEdit && (
+      {!isTimelineView && (
         <div className="mt-4 flex rounded bg-[var(--color-surface-2)] p-1">
           {(['describe', 'build'] as const).map((mode) => (
             <button
@@ -285,7 +299,7 @@ Keep it practical for a tradie. Australian English.`
         </div>
       )}
 
-      {inputMode === 'describe' && !isTimelineEdit ? (
+      {inputMode === 'describe' && !isTimelineView ? (
         <>
           <textarea
             value={scope}
@@ -355,7 +369,7 @@ Keep it practical for a tradie. Australian English.`
         </div>
       )}
 
-      {type === 'invoice' && !isTimelineEdit && inputMode === 'describe' && (
+      {type === 'invoice' && !isTimelineView && inputMode === 'describe' && (
         <>
           <label className="mt-4 font-body text-[13px] text-[var(--color-text-secondary)]">
             Due date
@@ -377,12 +391,12 @@ Keep it practical for a tradie. Australian English.`
         type="button"
         disabled={
           loading ||
-          (inputMode === 'describe' && !isTimelineEdit
+          (inputMode === 'describe' && !isTimelineView
             ? !scope.trim()
             : lineItems.every((l) => !l.description.trim()))
         }
         onClick={() =>
-          void (inputMode === 'describe' && !isTimelineEdit ? handleDescribeGenerate() : handleBuildGenerate())
+          void (inputMode === 'describe' && !isTimelineView ? handleDescribeGenerate() : handleBuildGenerate())
         }
         className="mt-6 flex min-h-[48px] items-center justify-center gap-2 rounded-xl btn-primary font-body font-medium disabled:opacity-50"
       >
@@ -391,8 +405,6 @@ Keep it practical for a tradie. Australian English.`
             <Loader2 size={20} className="animate-spin text-[var(--color-bg)]" />
             Nudge is writing your {type}...
           </>
-        ) : isTimelineEdit ? (
-          'Open document'
         ) : (
           'Generate'
         )}
