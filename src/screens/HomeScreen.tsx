@@ -70,7 +70,7 @@ export function HomeScreen({
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display text-[28px] font-semibold leading-none text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[20px] font-semibold leading-none text-[var(--color-text-primary)]">
             datum.ai
           </h1>
           <button
