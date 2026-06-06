@@ -9,7 +9,7 @@ import {
   StickyNote,
   X,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
 import { sortInvoices } from '../utils/invoiceSort'
 import { StatusBadge } from '../components/StatusBadge'
@@ -39,6 +39,7 @@ interface JobDetailScreenProps {
   onUpdateEntry: (entryId: string, updates: Partial<TimelineEntry>) => void
   onOpenDoc: (entry: TimelineEntry) => void
   showToast: ShowToastFn
+  initialTab?: JobTab
 }
 
 const invoiceStatusStyle: Record<string, { bg: string; text: string }> = {
@@ -65,11 +66,16 @@ export function JobDetailScreen({
   onUpdateEntry: _onUpdateEntry,
   onOpenDoc,
   showToast,
+  initialTab,
 }: JobDetailScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [noteText, setNoteText] = useState('')
-  const [activeTab, setActiveTab] = useState<JobTab>('timeline')
+  const [activeTab, setActiveTab] = useState<JobTab>(initialTab ?? 'timeline')
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab)
+  }, [initialTab])
   const [photoStep, setPhotoStep] = useState<PhotoStep>('idle')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoCaption, setPhotoCaption] = useState('')

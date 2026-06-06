@@ -1,8 +1,7 @@
-import { AnimatePresence, motion } from 'framer-motion'
 import {
   Camera,
   ChevronRight,
-  UserCircle2,
+  CircleUserRound,
   FileText,
   ImageIcon,
   Mic,
@@ -11,35 +10,25 @@ import {
   ScanLine,
   StickyNote,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import { NewsCard } from '../components/NewsCard'
 import { WeatherDisplay } from '../components/WeatherDisplay'
-import type { Job, Profile } from '../types'
+import type { Job, Profile, TimelineEntryType } from '../types'
 import { NAV_PB } from '../utils/layout'
 import { loadJson, STORAGE_KEYS } from '../utils/storage'
 import { getRecentActivity } from '../utils/recentActivity'
-import { firstNameFromProfile, getWelcomeLine } from '../utils/welcome'
-import type { TimelineEntryType } from '../types'
-
-const TAGLINES = [
-  'AI-powered tradie tools.',
-  'A toolbox in your pocket.',
-  'Built for the job.',
-  'Built to save time.',
-  'The smartest tool on site.',
-]
+import { firstNameFromProfile } from '../utils/welcome'
 
 interface HomeScreenProps {
   jobs: Job[]
   weather: {
     temp: number | null
-    weatherCode: number
-    windKmh: number
     description: string
     rainChance: number
     loading: boolean
+    available: boolean
   }
   onWeatherClick: () => void
   onSnap: () => void
@@ -59,12 +48,11 @@ export function HomeScreen({
   onNewJob,
   onOpenSettings,
 }: HomeScreenProps) {
-  const [taglineIndex, setTaglineIndex] = useState(0)
   const profile = loadJson<Profile>(STORAGE_KEYS.profile, { name: '', phone: '', trade: 'Carpenter' })
   const firstName = firstNameFromProfile(profile.name)
-  const dynamicLine = !weather.loading
-    ? getWelcomeLine(weather.weatherCode, weather.windKmh)
-    : null
+  const welcomeText = firstName
+    ? `G'day ${firstName}, what are we tackling today?`
+    : "G'day, what are we tackling today?"
 
   const recentActivity = useMemo(() => getRecentActivity(jobs, 4), [jobs])
 
@@ -76,12 +64,7 @@ export function HomeScreen({
     [jobs],
   )
 
-  useEffect(() => {
-    const t = window.setInterval(() => {
-      setTaglineIndex((i) => (i + 1) % TAGLINES.length)
-    }, 5000)
-    return () => window.clearInterval(t)
-  }, [])
+  const showWeather = weather.available || weather.loading
 
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
@@ -93,49 +76,32 @@ export function HomeScreen({
           <button
             type="button"
             onClick={onOpenSettings}
-            className="flex h-11 w-11 shrink-0 items-center justify-center"
+            className="flex shrink-0 items-center justify-center"
             aria-label="Settings"
           >
-            <UserCircle2
-              size={28}
-              strokeWidth={1.5}
-              className="text-[var(--color-text-primary)]"
-            />
+            <CircleUserRound size={28} />
           </button>
         </div>
-        <div className="relative mt-0 h-5 overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={taglineIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              className="font-display text-[13px] text-[var(--color-text-secondary)]"
-            >
-              {TAGLINES[taglineIndex]}
-            </motion.p>
-          </AnimatePresence>
-        </div>
-        <div className="mt-[38px]">
-          <WeatherDisplay
-            temp={weather.temp}
-            description={weather.description}
-            rainChance={weather.rainChance}
-            loading={weather.loading}
-            onClick={onWeatherClick}
-          />
-        </div>
+        {showWeather && (
+          <div className="mt-3">
+            <WeatherDisplay
+              temp={weather.temp}
+              description={weather.description}
+              rainChance={weather.rainChance}
+              loading={weather.loading}
+              onClick={onWeatherClick}
+            />
+          </div>
+        )}
       </header>
 
-      <div className="mt-2">
-        <p className="font-display text-[24px] font-semibold leading-tight text-[var(--color-text-primary)]">
-          {firstName ? `G'day ${firstName}.` : "G'day."}
-        </p>
-        {dynamicLine && (
-          <p className="mt-4 font-body text-[15px] text-[var(--color-text-secondary)]">{dynamicLine}</p>
-        )}
-      </div>
+      <p
+        className={`font-display text-[32px] font-bold leading-snug text-[var(--color-text-primary)] ${
+          showWeather ? 'mt-4' : 'mt-4'
+        }`}
+      >
+        {welcomeText}
+      </p>
 
       <div className="mt-6 grid grid-cols-2 gap-2">
         <button

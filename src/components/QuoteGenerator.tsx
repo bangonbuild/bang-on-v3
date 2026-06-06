@@ -260,11 +260,7 @@ Keep it practical for a tradie. Australian English.`
         }
         onConvertToInvoice={
           inViewMode && moneyRecord?.type === 'quote' && onConvertToInvoice
-            ? () => {
-                onConvertToInvoice(moneyRecord.id)
-                showToast('Converted to invoice.', 'success')
-                onClose()
-              }
+            ? () => onConvertToInvoice(moneyRecord.id)
             : undefined
         }
       />

@@ -28,7 +28,10 @@ import { SuggestToolScreen } from './screens/SuggestToolScreen'
 import { SupportScreen } from './screens/SupportScreen'
 import { ToolboxScreen } from './screens/ToolboxScreen'
 import type { GeneratedDocument, JobFilter, SnapMode, TabId, TimelineEntry } from './types'
+import { moneyRecordToDoc } from './utils/moneyHelpers'
 import { parseDocumentFromEntry, serializeDocument } from './utils/storage'
+
+type JobDetailTab = 'timeline' | 'invoices' | 'quotes'
 
 type Overlay =
   | { type: 'none' }
@@ -49,6 +52,7 @@ export default function App() {
   const [snapDrawerOpen, setSnapDrawerOpen] = useState(false)
   const [jobFilter, setJobFilter] = useState<JobFilter>('all')
   const [weatherOpen, setWeatherOpen] = useState(false)
+  const [jobDetailTab, setJobDetailTab] = useState<JobDetailTab | undefined>()
   const [nudgeOpen, setNudgeOpen] = useState(false)
   const [nudgeJobId, setNudgeJobId] = useState<string | undefined>()
 
@@ -77,7 +81,8 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [])
 
-  const goToJobDetail = useCallback((jobId: string) => {
+  const goToJobDetail = useCallback((jobId: string, tab?: JobDetailTab) => {
+    setJobDetailTab(tab)
     setOverlay({ type: 'job-detail', jobId })
   }, [])
 
@@ -317,6 +322,7 @@ export default function App() {
           }
           onOpenDoc={(entry) => openDocFromTimeline(job.id, entry)}
           showToast={showToast}
+          initialTab={jobDetailTab}
         />
       )
     }
@@ -433,7 +439,23 @@ export default function App() {
             closeOverlay()
           }}
           onMarkPaid={(id) => markPaid(id)}
-          onConvertToInvoice={(id) => convertQuoteToInvoice(id)}
+          onConvertToInvoice={(id) => {
+            const invoice = convertQuoteToInvoice(id)
+            if (!invoice) return
+            if (overlay.jobId) {
+              const doc = moneyRecordToDoc(invoice)
+              addTimelineEntry(overlay.jobId, {
+                type: 'invoice',
+                content: serializeDocument(doc),
+                amount: doc.total,
+              })
+              showToast('Invoice created.', 'success')
+              goToJobDetail(overlay.jobId, 'invoices')
+            } else {
+              showToast('Converted to invoice.', 'success')
+              closeOverlay()
+            }
+          }}
           onUpdateEntry={
             overlay.jobId && overlay.entryId
               ? (entryId, doc) => {
