@@ -96,7 +96,7 @@ export function HomeScreen({
       </header>
 
       <p
-        className={`font-display text-[32px] font-bold leading-snug text-[var(--color-text-primary)] ${
+        className={`font-display text-[26px] font-bold leading-snug text-[var(--color-text-primary)] ${
           showWeather ? 'mt-4' : 'mt-4'
         }`}
       >
