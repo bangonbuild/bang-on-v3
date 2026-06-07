@@ -83,7 +83,7 @@ export function HomeScreen({
           </button>
         </div>
         {showWeather && (
-          <div className="mt-3">
+          <div className="mt-1">
             <WeatherDisplay
               temp={weather.temp}
               description={weather.description}
