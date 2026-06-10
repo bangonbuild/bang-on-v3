@@ -13,6 +13,7 @@ export interface WeatherData {
   weatherCode: number
   description: string
   location: string
+  localTime: string
   windKmh: number
   rainChance: number
   uv: number
@@ -33,6 +34,14 @@ function weatherCodeToDescription(code: number): string {
   if (code <= 82) return 'Showers'
   if (code <= 99) return 'Storm'
   return 'Cloudy'
+}
+
+function formatLocalTime(isoLocal: string): string {
+  const timePart = isoLocal.split('T')[1]
+  if (!timePart) return ''
+  const [hours, minutes] = timePart.split(':').map((part) => parseInt(part, 10))
+  const date = new Date(2000, 0, 1, hours, minutes)
+  return date.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
 }
 
 function buildSiteAdvisory(windKmh: number, rainChance: number, uv: number): string {
@@ -84,6 +93,7 @@ const emptyWeather = (): WeatherData => ({
   weatherCode: 0,
   description: '',
   location: '',
+  localTime: '',
   windKmh: 0,
   rainChance: 0,
   uv: 0,
@@ -120,6 +130,8 @@ export function useWeather() {
 
       const data = await res.json()
       const current = data.current ?? data.current_weather
+      const observedAt = (current?.time as string | undefined) ?? ''
+      const localTime = observedAt ? formatLocalTime(observedAt) : ''
       const temp = Math.round(current?.temperature_2m ?? current?.temperature ?? 0)
       const code = current?.weather_code ?? current?.weathercode ?? 0
       const description = weatherCodeToDescription(code)
@@ -149,6 +161,7 @@ export function useWeather() {
         weatherCode: code,
         description,
         location,
+        localTime,
         windKmh,
         rainChance,
         uv,

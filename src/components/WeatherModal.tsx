@@ -55,6 +55,11 @@ export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModal
             <p className="mt-1 font-body text-[13px] text-[var(--color-text-tertiary)]">
               {weather.location}
             </p>
+            {weather.localTime && (
+              <p className="mt-0.5 font-body text-[13px] text-[var(--color-text-tertiary)]">
+                {weather.localTime}
+              </p>
+            )}
             <div className="mt-6 grid grid-cols-2 gap-2">
               {pills.map((p) => (
                 <div
