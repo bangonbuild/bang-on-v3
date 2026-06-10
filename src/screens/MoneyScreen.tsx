@@ -64,7 +64,7 @@ function MoneyDashboard({ stats }: { stats: MoneyScreenProps['stats'] }) {
   }
 
   return (
-    <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5">
+    <div className="section-gap rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5">
       <div className="flex items-stretch">
         {DASHBOARD_COLUMNS.map((col, index) => (
           <div
@@ -92,7 +92,7 @@ function MoneyDashboard({ stats }: { stats: MoneyScreenProps['stats'] }) {
 function ConnectTheBooks({ showToast }: { showToast: MoneyScreenProps['showToast'] }) {
   return (
     <>
-      <p className="section-label mt-6">Connect the books</p>
+      <p className="section-label section-gap">Connect the books</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <AccountingCard
           name="Xero"

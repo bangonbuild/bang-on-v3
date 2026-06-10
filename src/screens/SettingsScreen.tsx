@@ -291,7 +291,7 @@ export function SettingsScreen({
 
       {settingsTab === 'team' && (
         <>
-      <p className="section-label mt-6">Team</p>
+      <p className="section-label section-gap">Team</p>
       <p className="font-body text-[13px] text-[var(--color-text-secondary)]">
         Link to other tradies to share jobs and stay connected.
       </p>
@@ -353,7 +353,7 @@ export function SettingsScreen({
 
       {settingsTab === 'app' && (
         <>
-      <p className="section-label mt-6">Appearance</p>
+      <p className="section-label section-gap">Appearance</p>
       <div className="mt-2 flex gap-2">
         {(['dark', 'light'] as const).map((t) => (
           <button
@@ -371,7 +371,7 @@ export function SettingsScreen({
         ))}
       </div>
 
-      <p className="section-label mt-6">App</p>
+      <p className="section-label section-gap">App</p>
       <button
         type="button"
         onClick={() => {
@@ -410,7 +410,7 @@ function SectionHeader({
   showEdit: boolean
 }) {
   return (
-    <div className="mt-6 flex items-center justify-between">
+    <div className="section-gap flex items-center justify-between">
       <p className="section-label">{title}</p>
       {showEdit && !editing && (
         <button type="button" onClick={onEdit} className="font-body text-sm text-[var(--color-text-secondary)]">

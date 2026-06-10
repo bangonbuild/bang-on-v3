@@ -273,7 +273,7 @@ export function JobDetailScreen({
       )}
 
       {!inPhotoFlow && (
-        <div className="mt-6 flex items-stretch gap-2">
+        <div className="section-gap flex items-stretch gap-2">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
@@ -306,7 +306,7 @@ export function JobDetailScreen({
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="section-gap">
         {activeTab === 'timeline' && (
           <>
             {job.timeline.length === 0 ? (

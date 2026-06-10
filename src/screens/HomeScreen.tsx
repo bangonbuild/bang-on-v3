@@ -103,7 +103,7 @@ export function HomeScreen({
         {welcomeText}
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-2">
+      <div className="section-gap grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={onSnap}
@@ -124,7 +124,7 @@ export function HomeScreen({
         </button>
       </div>
 
-      <p className="section-label normal-case mt-6">Your jobs</p>
+      <p className="section-label normal-case section-gap">Your jobs</p>
       {activeJobs.length === 0 ? (
         <button
           type="button"
@@ -154,7 +154,7 @@ export function HomeScreen({
         </div>
       )}
 
-      <p className="section-label normal-case mt-6">Tradie news</p>
+      <p className="section-label normal-case section-gap">Tradie news</p>
       <div className="mt-2 flex flex-col gap-2">
         <NewsCard
           headline="New NCC requirements for residential builds — what you need to know before July"
@@ -162,7 +162,7 @@ export function HomeScreen({
         />
       </div>
 
-      <p className="section-label mt-6">Recent activity</p>
+      <p className="section-label section-gap">Recent activity</p>
       {recentActivity.length === 0 ? (
         <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
           No recent activity. Start by creating a job.

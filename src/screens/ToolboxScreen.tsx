@@ -31,19 +31,19 @@ export function ToolboxScreen({
     <div className={`overflow-y-auto px-4 pt-6 pb-24`}>
       <ScreenTitle>Toolbox</ScreenTitle>
 
-      <p className="section-label mt-6">Tools</p>
+      <p className="section-label section-gap">Tools</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <ToolCard title="Measure & calculate" subtitle="Numbers sorted, fast" icon={Ruler} onClick={onMeasure} />
         <ToolCard title="Photo report" subtitle="Snap, write, share" icon={ImageIcon} onClick={onPhotoReport} />
       </div>
 
-      <p className="section-label mt-6">Paperwork</p>
+      <p className="section-label section-gap">Paperwork</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <ToolCard title="Quote" subtitle="Fast quote, no job needed" icon={ReceiptText} onClick={onQuote} />
         <ToolCard title="Invoice" subtitle="Bill your client" icon={FileText} onClick={onInvoice} />
       </div>
 
-      <p className="section-label mt-6">Coming soon</p>
+      <p className="section-label section-gap">Coming soon</p>
       <div className="mt-2 flex flex-col gap-2">
         <FeaturePlaceholder
           icon={ClipboardList}
@@ -65,7 +65,7 @@ export function ToolboxScreen({
         />
       </div>
 
-      <div className="mt-6">
+      <div className="section-gap">
         <p className="font-body text-[15px] text-[var(--color-text-primary)]">Got a tool idea?</p>
         <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">
           We&apos;re building datum.ai with tradies. Suggest a tool and we&apos;ll add it to the backlog.
@@ -79,7 +79,7 @@ export function ToolboxScreen({
         </button>
       </div>
 
-      <p className="section-label mt-6">Recent photo reports</p>
+      <p className="section-label section-gap">Recent photo reports</p>
       {photoReports.length === 0 ? (
         <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
           No photo reports yet.

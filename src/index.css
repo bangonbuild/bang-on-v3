@@ -67,6 +67,10 @@ body,
   color: var(--color-text-secondary);
 }
 
+.section-gap {
+  margin-top: 2.5rem;
+}
+
 .text-primary {
   color: var(--color-text-primary);
 }
