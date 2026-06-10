@@ -112,20 +112,29 @@ export function useWeather() {
       const [location, res] = await Promise.all([
         reverseGeocode(latitude, longitude),
         fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&current_weather=true&forecast_days=3`,
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`,
         ),
       ])
 
       if (!res.ok) throw new Error('Weather unavailable')
 
       const data = await res.json()
-      const temp = Math.round(data.current?.temperature_2m ?? 0)
-      const code = data.current?.weather_code ?? 0
+      const current = data.current ?? data.current_weather
+      const temp = Math.round(current?.temperature_2m ?? current?.temperature ?? 0)
+      const code = current?.weather_code ?? current?.weathercode ?? 0
       const description = weatherCodeToDescription(code)
-      const windKmh = Math.round((data.current?.wind_speed_10m ?? 0) * 3.6)
-      const feelsLike = Math.round(data.current?.apparent_temperature ?? temp)
-      const uv = Math.round(data.current?.uv_index ?? 0)
-      const rainChance = Math.round(data.hourly?.precipitation_probability?.[0] ?? 0)
+      const windKmh = Math.round(current?.wind_speed_10m ?? current?.windspeed ?? 0)
+      const feelsLike = Math.round(current?.apparent_temperature ?? temp)
+      const uv = Math.round(current?.uv_index ?? 0)
+
+      const currentHour = (current?.time as string | undefined)?.slice(0, 13)
+      const hourlyTimes: string[] = data.hourly?.time ?? []
+      const hourIndex = currentHour
+        ? hourlyTimes.findIndex((t) => t.startsWith(currentHour))
+        : -1
+      const rainChance = Math.round(
+        data.hourly?.precipitation_probability?.[hourIndex >= 0 ? hourIndex : 0] ?? 0,
+      )
 
       const forecast: ForecastDay[] = (data.daily?.time ?? []).slice(0, 3).map((date: string, i: number) => ({
         date,
