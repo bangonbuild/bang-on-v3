@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import type { WeatherData } from '../hooks/useWeather'
 import { Icon } from './Icon'
 
@@ -15,7 +16,34 @@ function formatDay(dateStr: string): string {
   return d.toLocaleDateString('en-AU', { weekday: 'short' })
 }
 
+function formatLocalTime(timezone: string): string {
+  return new Date().toLocaleTimeString('en-AU', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: timezone,
+  })
+}
+
+function useLocalTime(timezone: string, active: boolean): string {
+  const [time, setTime] = useState('')
+
+  useEffect(() => {
+    if (!timezone || !active) {
+      setTime('')
+      return
+    }
+
+    const update = () => setTime(formatLocalTime(timezone))
+    update()
+    const id = window.setInterval(update, 30_000)
+    return () => window.clearInterval(id)
+  }, [timezone, active])
+
+  return time
+}
+
 export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModalProps) {
+  const localTime = useLocalTime(weather.timezone, open)
   const pills = [
     { label: 'Wind', value: `${weather.windKmh} km/h` },
     { label: 'Rain chance', value: `${weather.rainChance}%` },
@@ -55,9 +83,9 @@ export function WeatherModal({ open, weather, onClose, onRefresh }: WeatherModal
             <p className="mt-1 font-body text-[13px] text-[var(--color-text-tertiary)]">
               {weather.location}
             </p>
-            {weather.localTime && (
+            {localTime && (
               <p className="mt-0.5 font-body text-[13px] text-[var(--color-text-tertiary)]">
-                {weather.localTime}
+                {localTime}
               </p>
             )}
             <div className="mt-6 grid grid-cols-2 gap-2">
