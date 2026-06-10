@@ -79,7 +79,7 @@ export function HomeScreen({
             className="flex shrink-0 items-center justify-center"
             aria-label="Settings"
           >
-            <CircleUserRound size={28} />
+            <Icon icon={CircleUserRound} size={28} strokeWidth={1.5} />
           </button>
         </div>
         {showWeather && (
