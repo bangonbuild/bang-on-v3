@@ -141,7 +141,7 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }
               No invoices yet. Generate one from a job or the Toolbox.
             </p>
           ) : (
-            <div className="mt-2 flex flex-col gap-2">
+            <div className="mt-4 flex flex-col gap-2">
               {sortedInvoices.map((inv) => (
                 <MoneyRow key={inv.id} record={inv} type="invoice" onOpen={() => onOpenRecord(inv)} />
               ))}
@@ -158,7 +158,7 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }
               No quotes yet. Generate one from a job or the Toolbox.
             </p>
           ) : (
-            <div className="mt-2 flex flex-col gap-2">
+            <div className="mt-4 flex flex-col gap-2">
               {sortedQuotes.map((q) => (
                 <MoneyRow key={q.id} record={q} type="quote" onOpen={() => onOpenRecord(q)} />
               ))}
