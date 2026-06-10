@@ -114,7 +114,7 @@ export function useWeather() {
       const [location, res] = await Promise.all([
         reverseGeocode(latitude, longitude),
         fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`,
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,uv_index&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=4`,
         ),
       ])
 
@@ -139,13 +139,16 @@ export function useWeather() {
         data.hourly?.precipitation_probability?.[hourIndex >= 0 ? hourIndex : 0] ?? 0,
       )
 
-      const forecast: ForecastDay[] = (data.daily?.time ?? []).slice(0, 3).map((date: string, i: number) => ({
-        date,
-        high: Math.round(data.daily.temperature_2m_max[i]),
-        low: Math.round(data.daily.temperature_2m_min[i]),
-        rainChance: Math.round(data.daily.precipitation_probability_max[i] ?? 0),
-        description: weatherCodeToDescription(data.daily.weather_code[i]),
-      }))
+      const forecast: ForecastDay[] = (data.daily?.time ?? []).slice(1, 4).map((date: string, i: number) => {
+        const dayIndex = i + 1
+        return {
+          date,
+          high: Math.round(data.daily.temperature_2m_max[dayIndex]),
+          low: Math.round(data.daily.temperature_2m_min[dayIndex]),
+          rainChance: Math.round(data.daily.precipitation_probability_max[dayIndex] ?? 0),
+          description: weatherCodeToDescription(data.daily.weather_code[dayIndex]),
+        }
+      })
 
       setWeather({
         temp,
