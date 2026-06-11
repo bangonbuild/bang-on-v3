@@ -2,6 +2,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { sendClientUpdate } from '../services/notifyService'
+import { useLoading } from '../hooks/useLoading'
+import { ButtonSpinner } from './ButtonSpinner'
 import type { Job } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
 
@@ -69,6 +71,7 @@ export function ShareUpdateModal({
   const [includePhotos, setIncludePhotos] = useState(true)
   const [includeDoc, setIncludeDoc] = useState(includeDocDefault)
   const [sending, setSending] = useState(false)
+  const { track } = useLoading()
 
   useEffect(() => {
     if (!isOpen) return
@@ -102,12 +105,14 @@ export function ShareUpdateModal({
 
     setSending(true)
     try {
-      await sendClientUpdate({
-        job: snapshotJob,
-        message: message.trim(),
-        clientEmail: email.trim(),
-        clientName: job?.client,
-      })
+      await track(
+        sendClientUpdate({
+          job: snapshotJob,
+          message: message.trim(),
+          clientEmail: email.trim(),
+          clientName: job?.client,
+        }),
+      )
       onClose()
       showToast(`Update sent to ${job?.client || 'client'}.`, 'success')
     } catch {
@@ -224,7 +229,7 @@ export function ShareUpdateModal({
                 disabled={!canSend}
                 className="mt-2 flex h-12 w-full items-center justify-center rounded-full bg-[#14120a] font-body text-[15px] font-semibold text-white disabled:opacity-50"
               >
-                {sending ? 'Sending...' : 'Send update →'}
+                {sending ? <ButtonSpinner /> : 'Send update →'}
               </button>
             </div>
           </motion.div>

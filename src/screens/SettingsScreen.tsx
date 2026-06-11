@@ -30,6 +30,7 @@ interface SettingsScreenProps {
   setTheme: (theme: Theme) => void
   onBack: () => void
   onSupport: () => void
+  drawer?: boolean
 }
 
 function hasProfileData(p: Profile) {
@@ -51,6 +52,7 @@ export function SettingsScreen({
   setTheme,
   onBack,
   onSupport,
+  drawer = false,
 }: SettingsScreenProps) {
   const isDesktop = useDesktop()
   const [settingsTab, setSettingsTab] = useState<'profile' | 'team' | 'app'>('profile')
@@ -95,7 +97,8 @@ export function SettingsScreen({
   }
 
   return (
-    <div className={`${isDesktop ? 'px-10 pt-8' : 'px-4 pt-6'} ${isDesktop ? DESKTOP_PB : NAV_PB}`}>
+    <div className={`${drawer ? 'px-5 pb-8' : isDesktop ? 'px-10 pt-8' : 'px-4 pt-6'} ${drawer ? '' : isDesktop ? DESKTOP_PB : NAV_PB}`}>
+      {!drawer && (
       <header className={`flex items-center gap-3 ${isDesktop ? 'mb-0' : ''}`}>
         {!isDesktop && (
           <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
@@ -104,6 +107,7 @@ export function SettingsScreen({
         )}
         <ScreenTitle>Settings</ScreenTitle>
       </header>
+      )}
 
       <div className="mt-4 flex gap-2">
         {(['profile', 'team', 'app'] as const).map((tab) => (
@@ -421,7 +425,7 @@ export function SettingsScreen({
       >
         Support
       </button>
-      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.9</p>
+      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.10</p>
         </>
       )}
     </div>

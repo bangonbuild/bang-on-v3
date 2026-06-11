@@ -2,6 +2,7 @@ import { ArrowLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { analyseImage, mapFetchError } from '../services/aiService'
+import { useLoading } from '../hooks/useLoading'
 import type { Profile, SnapMode } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
 import { NAV_PB } from '../utils/layout'
@@ -52,6 +53,7 @@ export function SnapScreen({
   const [imageBase64, setImageBase64] = useState('')
   const [imageMimeType, setImageMimeType] = useState('image/jpeg')
   const [error, setError] = useState<string | null>(null)
+  const { track } = useLoading()
   const [analysis, setAnalysis] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
   const cameraRef = useRef<HTMLInputElement>(null)
@@ -92,12 +94,14 @@ export function SnapScreen({
       const encoded = await encodeImage(file)
       setImageBase64(encoded.base64)
       setImageMimeType(encoded.mimeType)
-      const result = await analyseImage({
-        image: encoded.base64,
-        mimeType: encoded.mimeType,
-        mode,
-        trade: profile.trade,
-      })
+      const result = await track(
+        analyseImage({
+          image: encoded.base64,
+          mimeType: encoded.mimeType,
+          mode,
+          trade: profile.trade,
+        }),
+      )
       setAnalysis(result.analysis)
       setSuggestions(result.suggestions)
       setStep('results')

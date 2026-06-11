@@ -36,9 +36,6 @@ export function JobCard({ job, onClick, compact = true }: JobCardProps) {
       {!compact && job.address && (
         <p className="mt-1 font-body text-[13px] text-[var(--color-text-secondary)]">{job.address}</p>
       )}
-      {job.attention && (
-        <p className="mt-2 font-body text-xs text-[var(--color-text-primary)]">{job.attention}</p>
-      )}
       <span
         className="mt-3 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium"
         style={{ background: status.bg, color: status.text }}

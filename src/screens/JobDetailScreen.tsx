@@ -12,14 +12,18 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import { ButtonSpinner } from '../components/ButtonSpinner'
 import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
 import { sortInvoices } from '../utils/invoiceSort'
 import { StatusBadge } from '../components/StatusBadge'
 import { streamChatMessage } from '../services/aiService'
+import { useLoading } from '../hooks/useLoading'
 import type { Job, MoneyRecord, Profile, TimelineEntry } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
 import { NAV_PB } from '../utils/layout'
 import { formatDate, formatRelativeTime } from '../utils/storage'
+import { nudgeMarkdownComponents } from '../utils/markdownComponents'
 
 type JobTab = 'timeline' | 'invoices' | 'quotes'
 type PhotoStep = 'idle' | 'capture' | 'preview'
@@ -84,6 +88,9 @@ export function JobDetailScreen({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoCaption, setPhotoCaption] = useState('')
   const [polishLoading, setPolishLoading] = useState(false)
+  const [polishPreview, setPolishPreview] = useState<string | null>(null)
+  const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null)
+  const { track } = useLoading()
   const cameraRef = useRef<HTMLInputElement>(null)
   const libraryRef = useRef<HTMLInputElement>(null)
 
@@ -144,23 +151,32 @@ export function JobDetailScreen({
   const handlePolishNote = async () => {
     if (!noteText.trim()) return
     setPolishLoading(true)
+    setPolishPreview(null)
+    const userName = profile.name?.split(' ')[0] || undefined
     try {
-      let polished = ''
-      await streamChatMessage({
-        messages: [
-          {
-            role: 'user',
-            content: `Rewrite this site note professionally for a client-facing record. Keep it concise. Original: ${noteText.trim()}`,
-          },
-        ],
-        trade: profile.trade,
-        onToken: (t) => {
-          polished += t
-        },
-      })
-      if (polished) setNoteText(polished)
+      const polished = await track(
+        streamChatMessage({
+          messages: [
+            {
+              role: 'user',
+              content: `Rewrite this site note professionally for a client-facing record. Use markdown formatting (bold, bullet points where helpful). Keep it concise. Original: ${noteText.trim()}`,
+            },
+          ],
+          trade: profile.trade,
+          userName,
+          onToken: () => {},
+        }),
+      )
+      if (polished) setPolishPreview(polished)
     } finally {
       setPolishLoading(false)
+    }
+  }
+
+  const handleAcceptPolish = () => {
+    if (polishPreview) {
+      setNoteText(polishPreview)
+      setPolishPreview(null)
     }
   }
 
@@ -320,22 +336,31 @@ export function JobDetailScreen({
         {activeTab === 'timeline' && (
           <>
             {job.timeline.length === 0 ? (
-              <div className="py-12 text-center">
-                <p className="font-body text-[var(--color-text-tertiary)]">No entries yet.</p>
-                <button
-                  type="button"
-                  onClick={() => setDrawerOpen(true)}
-                  className="mt-2 font-body text-[var(--color-text-secondary)] underline"
-                >
-                  Add your first note →
-                </button>
+              <div className="relative pl-5 pt-2">
+                <div className="absolute left-[4px] top-3 h-[10px] w-[10px] rounded-full border-2 border-[var(--color-border)] bg-[var(--color-border-2)] opacity-40" />
+                <div className="absolute bottom-0 left-[8px] top-[18px] border-l border-dashed border-[var(--color-border)]" />
+                <div className="py-8 pl-6 text-center">
+                  <p className="font-body text-[var(--color-text-tertiary)]">No entries yet.</p>
+                  <button
+                    type="button"
+                    onClick={() => setDrawerOpen(true)}
+                    className="mt-2 font-body text-[var(--color-text-secondary)] underline"
+                  >
+                    Tap + Add to job to get started.
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {job.timeline.map((entry) => (
-                  <TimelineItem
+              <div className="relative pl-5">
+                {job.timeline.map((entry, i) => (
+                  <TimelineRow
                     key={entry.id}
                     entry={entry}
+                    isLast={i === job.timeline.length - 1}
+                    expanded={expandedEntryId === entry.id}
+                    onToggle={() =>
+                      setExpandedEntryId((id) => (id === entry.id ? null : entry.id))
+                    }
                     onOpenDoc={() => onOpenDoc(entry)}
                     onToggleVisibility={() =>
                       onUpdateEntry(entry.id, { clientVisible: !entry.clientVisible })
@@ -467,11 +492,31 @@ export function JobDetailScreen({
               </div>
               <textarea
                 value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
+                onChange={(e) => {
+                  setNoteText(e.target.value)
+                  setPolishPreview(null)
+                }}
                 rows={6}
                 placeholder="Site note..."
                 className="mt-4 min-h-[140px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 font-body text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)]"
               />
+              {polishPreview && (
+                <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
+                  <p className="mb-2 font-body text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                    Polished preview
+                  </p>
+                  <div className="nudge-markdown font-body text-[var(--color-text-primary)]">
+                    <ReactMarkdown components={nudgeMarkdownComponents}>{polishPreview}</ReactMarkdown>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAcceptPolish}
+                    className="mt-3 min-h-[40px] rounded-lg bg-white px-4 font-body text-sm font-medium text-black"
+                  >
+                    Accept
+                  </button>
+                </div>
+              )}
               <div className="mt-4 flex gap-2">
                 <button
                   type="button"
@@ -479,7 +524,7 @@ export function JobDetailScreen({
                   disabled={!noteText.trim() || polishLoading}
                   className="flex h-12 flex-1 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] font-body text-[var(--color-text-primary)] disabled:opacity-50"
                 >
-                  {polishLoading ? 'Polishing...' : 'Polish with Nudge'}
+                  {polishLoading ? <ButtonSpinner className="border-white/20 border-t-white" /> : 'Polish with Nudge'}
                 </button>
                 <button
                   type="button"
@@ -498,110 +543,152 @@ export function JobDetailScreen({
   )
 }
 
-function TimelineItem({
+function timelineSummary(entry: TimelineEntry): string {
+  switch (entry.type) {
+    case 'note': {
+      const text = entry.polishedContent ?? entry.content
+      return text.length > 60 ? `${text.slice(0, 60)}...` : text
+    }
+    case 'photo':
+      return entry.content ? `Photo added — ${entry.content.slice(0, 30)}` : 'Photo added'
+    case 'quote':
+      return `Quote — $${entry.amount?.toLocaleString() ?? '0'}`
+    case 'invoice':
+      return `Invoice — $${entry.amount?.toLocaleString() ?? '0'}`
+    case 'photo-report':
+      return 'Photo report generated'
+    case 'nudge':
+      return 'Nudge conversation'
+    default:
+      return entry.content
+  }
+}
+
+function TimelineRow({
   entry,
+  isLast,
+  expanded,
+  onToggle,
   onOpenDoc,
   onToggleVisibility,
 }: {
   entry: TimelineEntry
+  isLast: boolean
+  expanded: boolean
+  onToggle: () => void
   onOpenDoc: () => void
   onToggleVisibility: () => void
 }) {
   const iconProps = {
-    size: 18 as const,
+    size: 16 as const,
     strokeWidth: 1.5 as const,
-    className: 'text-[var(--color-text-secondary)]',
+    className: 'shrink-0 text-[var(--color-text-tertiary)]',
     style: { display: 'block' as const },
   }
 
   const visible = entry.clientVisible === true
-  const visibilityBtn = (
-    <button
-      type="button"
-      onClick={onToggleVisibility}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-[var(--color-surface-2)]"
-      aria-label={visible ? 'Visible to client' : 'Hidden from client'}
-      title={visible ? 'Visible to client' : 'Hidden from client'}
-    >
-      {visible ? (
-        <Eye size={16} strokeWidth={1.5} className="text-[var(--color-text-secondary)]" />
-      ) : (
-        <EyeOff size={16} strokeWidth={1.5} className="text-[var(--color-text-tertiary)]" />
-      )}
-    </button>
-  )
+  const noteContent = entry.polishedContent ?? entry.content
 
-  if (entry.type === 'photo' && entry.imageUrl) {
-    return (
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <div className="mb-2 flex justify-end">{visibilityBtn}</div>
-        <img src={entry.imageUrl} alt="" className="w-full rounded-xl object-cover" />
-        {entry.content && (
-          <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
-        )}
-        <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
-          {formatRelativeTime(entry.timestamp)}
-        </p>
-      </div>
-    )
-  }
-
-  if (entry.type === 'quote' || entry.type === 'invoice') {
-    return (
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <button
-          type="button"
-          onClick={onOpenDoc}
-          className="flex flex-1 items-center gap-3 text-left"
-        >
-        <span style={{ display: 'block' }}>
-          {entry.type === 'quote' ? (
-            <ReceiptText {...iconProps} />
-          ) : (
-            <FileText {...iconProps} />
-          )}
-        </span>
-        <div>
-          <p className="font-body capitalize text-[var(--color-text-primary)]">
-            {entry.type} — ${entry.amount?.toLocaleString() ?? '0'}
-          </p>
-          <p className="font-body text-xs text-[var(--color-text-tertiary)]">
-            {formatRelativeTime(entry.timestamp)}
-          </p>
-        </div>
-        </button>
-        {visibilityBtn}
-      </div>
-    )
-  }
-
-  if (entry.type === 'photo-report') {
-    return (
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <div className="flex justify-end">{visibilityBtn}</div>
-        <span style={{ display: 'block' }}>
-          <ImageIcon {...iconProps} />
-        </span>
-        <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">Photo report</p>
-        <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
-          {formatRelativeTime(entry.timestamp)}
-        </p>
-      </div>
-    )
+  const renderIcon = () => {
+    switch (entry.type) {
+      case 'photo':
+        return <ImageIcon {...iconProps} />
+      case 'quote':
+        return <ReceiptText {...iconProps} />
+      case 'invoice':
+        return <FileText {...iconProps} />
+      case 'photo-report':
+        return <ImageIcon {...iconProps} />
+      case 'nudge':
+        return <MessageCircle {...iconProps} />
+      default:
+        return <StickyNote {...iconProps} />
+    }
   }
 
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <div className="flex items-start justify-between gap-2">
-        <span style={{ display: 'block' }}>
-          <StickyNote {...iconProps} />
+    <div className="relative pb-4">
+      <div
+        className="absolute left-[4px] top-[19px] z-[1] h-[10px] w-[10px] rounded-full border-2 border-[var(--color-border)] bg-[var(--color-border-2)]"
+        aria-hidden
+      />
+      {!isLast && (
+        <div
+          className="absolute bottom-0 left-[8px] top-[29px] border-l border-dashed border-[var(--color-border)]"
+          aria-hidden
+        />
+      )}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="relative flex min-h-[48px] w-full items-center gap-2 pl-6 text-left"
+      >
+        {renderIcon()}
+        <span className="min-w-0 flex-1 truncate font-body text-[14px] text-[var(--color-text-primary)]">
+          {timelineSummary(entry)}
         </span>
-        {visibilityBtn}
-      </div>
-      <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
-      <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
-        {formatRelativeTime(entry.timestamp)}
-      </p>
+        <span className="shrink-0 font-body text-[12px] text-[var(--color-text-tertiary)]">
+          {formatRelativeTime(entry.timestamp)}
+        </span>
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden pl-6"
+          >
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+              {entry.type === 'note' && (
+                <div className="nudge-markdown font-body text-[var(--color-text-primary)]">
+                  <ReactMarkdown components={nudgeMarkdownComponents}>{noteContent}</ReactMarkdown>
+                </div>
+              )}
+              {entry.type === 'photo' && entry.imageUrl && (
+                <>
+                  <img src={entry.imageUrl} alt="" className="w-full rounded-xl object-cover" />
+                  {entry.content && (
+                    <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
+                  )}
+                </>
+              )}
+              {(entry.type === 'quote' || entry.type === 'invoice') && (
+                <div className="flex flex-col gap-2">
+                  <p className="font-body capitalize text-[var(--color-text-primary)]">
+                    {entry.type} — ${entry.amount?.toLocaleString() ?? '0'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onOpenDoc}
+                    className="min-h-[40px] rounded-lg border border-[var(--color-border)] font-body text-sm text-[var(--color-text-primary)]"
+                  >
+                    View {entry.type}
+                  </button>
+                </div>
+              )}
+              {entry.type === 'photo-report' && (
+                <p className="font-body text-[15px] text-[var(--color-text-primary)]">Photo report</p>
+              )}
+              {entry.type === 'nudge' && (
+                <p className="font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
+              )}
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={onToggleVisibility}
+                  className="flex h-8 items-center gap-1 rounded-lg px-2 font-body text-xs text-[var(--color-text-secondary)]"
+                  title={visible ? 'Visible to client' : 'Hidden from client'}
+                >
+                  {visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                  {visible ? 'Visible to client' : 'Hidden from client'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

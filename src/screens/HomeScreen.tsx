@@ -1,6 +1,5 @@
 import {
   Camera,
-  ChevronRight,
   CircleUserRound,
   FileText,
   ImageIcon,
@@ -11,10 +10,11 @@ import {
   StickyNote,
   Upload,
 } from 'lucide-react'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { JobCard } from '../components/JobCard'
 import { NewsCard } from '../components/NewsCard'
+import { SkeletonItem } from '../components/SkeletonItem'
 import { WeatherDisplay } from '../components/WeatherDisplay'
 import { useDesktop } from '../hooks/useDesktop'
 import type { Job, Profile, TimelineEntryType } from '../types'
@@ -54,11 +54,17 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const isDesktop = useDesktop()
   const uploadRef = useRef<HTMLInputElement>(null)
+  const [initialLoading, setInitialLoading] = useState(true)
   const profile = loadJson<Profile>(STORAGE_KEYS.profile, { name: '', phone: '', trade: 'Carpenter' })
   const firstName = firstNameFromProfile(profile.name)
   const welcomeText = firstName
     ? `G'day ${firstName}, what are we tackling today?`
     : "G'day, what are we tackling today?"
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setInitialLoading(false), 450)
+    return () => window.clearTimeout(t)
+  }, [])
 
   const recentActivity = useMemo(() => getRecentActivity(jobs, 4), [jobs])
 
@@ -74,11 +80,11 @@ export function HomeScreen({
   const padClass = isDesktop ? DESKTOP_PB : NAV_PB
   const containerClass = isDesktop
     ? `px-10 pt-8 ${padClass}`
-    : `px-4 pt-6 ${padClass}`
+    : `px-4 pt-[24px] ${padClass}`
 
   const welcomeClass = isDesktop
-    ? 'font-display text-[28px] font-bold leading-snug text-[var(--color-text-primary)] mt-4'
-    : 'font-display text-[26px] font-bold leading-snug text-[var(--color-text-primary)] mt-4'
+    ? 'font-display text-[28px] font-bold leading-snug text-[var(--color-text-primary)]'
+    : 'font-display text-[26px] font-bold leading-snug text-[var(--color-text-primary)]'
 
   const handleUploadClick = () => {
     if (onUpload) {
@@ -91,7 +97,12 @@ export function HomeScreen({
   const jobsSection = (
     <>
       <p className="section-label section-gap">Your jobs</p>
-      {activeJobs.length === 0 ? (
+      {initialLoading ? (
+        <div className={`mt-2 flex gap-2 overflow-x-auto pb-1 ${isDesktop ? '' : '-mx-4 px-4'}`}>
+          <SkeletonItem className="w-[220px] shrink-0" height={120} />
+          <SkeletonItem className="w-[220px] shrink-0" height={120} />
+        </div>
+      ) : activeJobs.length === 0 ? (
         <button
           type="button"
           onClick={onNewJob}
@@ -124,7 +135,7 @@ export function HomeScreen({
 
   const newsSection = (
     <>
-      <p className={`section-label ${isDesktop ? 'mt-0' : 'section-gap'}`}>Tradie news</p>
+      <p className="section-label section-gap">Tradie news</p>
       <div className="mt-2 flex flex-col gap-2">
         <NewsCard
           headline="New NCC requirements for residential builds — what you need to know before July"
@@ -137,25 +148,34 @@ export function HomeScreen({
   const activitySection = (
     <>
       <p className="section-label section-gap">Recent activity</p>
-      {recentActivity.length === 0 ? (
+      {initialLoading ? (
+        <div className="mt-2 flex flex-col">
+          <SkeletonItem className="w-full rounded-none" height={48} />
+          <SkeletonItem className="mt-2 w-full rounded-none" height={48} />
+          <SkeletonItem className="mt-2 w-full rounded-none" height={48} />
+        </div>
+      ) : recentActivity.length === 0 ? (
         <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
           No recent activity. Start by creating a job.
         </p>
       ) : (
-        <div className="mt-2 flex flex-col gap-2">
-          {recentActivity.map((item) => (
+        <div className="mt-2 flex flex-col">
+          {recentActivity.map((item, i) => (
             <button
               key={`${item.jobId}-${item.id}`}
               type="button"
               onClick={() => onJob(item.jobId)}
-              className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
+              className={`flex min-h-[48px] w-full items-center gap-3 py-2 text-left ${
+                i < recentActivity.length - 1 ? 'border-b border-[var(--color-border)]' : ''
+              }`}
             >
               <ActivityIcon type={item.type} />
-              <div className="min-w-0 flex-1">
-                <p className="font-body text-[14px] text-[var(--color-text-primary)]">{item.description}</p>
-                <p className="font-body text-[12px] text-[var(--color-text-tertiary)]">{item.timeLabel}</p>
-              </div>
-              <ChevronRight size={18} strokeWidth={1.5} className="shrink-0 text-[var(--color-text-tertiary)]" />
+              <span className="min-w-0 flex-1 truncate font-body text-[14px] text-[var(--color-text-primary)]">
+                {item.description}
+              </span>
+              <span className="shrink-0 font-body text-[12px] text-[var(--color-text-tertiary)]">
+                {item.timeLabel}
+              </span>
             </button>
           ))}
         </div>
@@ -164,7 +184,7 @@ export function HomeScreen({
   )
 
   const actionCards = (
-    <div className="section-gap grid grid-cols-2 gap-2">
+    <div className="mt-5 grid grid-cols-2 gap-2">
       {isDesktop ? (
         <>
           <input
@@ -213,13 +233,20 @@ export function HomeScreen({
     </div>
   )
 
+  const welcomeBlock = (
+    <>
+      <p className={welcomeClass}>{welcomeText}</p>
+      {actionCards}
+    </>
+  )
+
   if (isDesktop) {
     return (
       <div className={containerClass}>
         <div className="mx-auto flex max-w-[960px] gap-10">
           <div className="min-w-0 flex-[0.55]">
             {showWeather && (
-              <div className="-mt-0.5">
+              <div className="mt-2">
                 <WeatherDisplay
                   temp={weather.temp}
                   description={weather.description}
@@ -229,13 +256,12 @@ export function HomeScreen({
                 />
               </div>
             )}
-            <p className={welcomeClass}>{welcomeText}</p>
-            {actionCards}
+            <div className="mt-4">{welcomeBlock}</div>
             {jobsSection}
           </div>
           <div className="min-w-0 flex-[0.45]">
-            {newsSection}
             {activitySection}
+            {newsSection}
           </div>
         </div>
       </div>
@@ -259,7 +285,7 @@ export function HomeScreen({
           </button>
         </div>
         {showWeather && (
-          <div className="-mt-0.5">
+          <div className="mt-2">
             <WeatherDisplay
               temp={weather.temp}
               description={weather.description}
@@ -271,11 +297,10 @@ export function HomeScreen({
         )}
       </header>
 
-      <p className={welcomeClass}>{welcomeText}</p>
-      {actionCards}
+      <div className="mt-8">{welcomeBlock}</div>
       {jobsSection}
-      {newsSection}
       {activitySection}
+      {newsSection}
     </div>
   )
 }
@@ -284,7 +309,7 @@ function ActivityIcon({ type }: { type: TimelineEntryType }) {
   const iconProps = {
     size: 18 as const,
     strokeWidth: 1.5 as const,
-    className: 'shrink-0 text-[var(--color-text-secondary)]',
+    className: 'shrink-0 text-[var(--color-text-tertiary)]',
     style: { display: 'block' as const },
   }
 

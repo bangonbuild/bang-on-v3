@@ -3,7 +3,9 @@ import ReactMarkdown from 'react-markdown'
 import { nudgeMarkdownComponents } from '../utils/markdownComponents'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatBubble } from '../components/ChatBubble'
+import { ButtonSpinner } from '../components/ButtonSpinner'
 import { streamChatMessage, analyseImage, mapFetchError } from '../services/aiService'
+import { useLoading } from '../hooks/useLoading'
 import type { ChatMessage, Job, PendingChat, Profile } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
 import { buildJobContext } from '../utils/jobHelpers'
@@ -47,6 +49,8 @@ export function NudgeScreen({
   const snapContextRef = useRef<string | null>(null)
   const messagesRef = useRef(messages)
   messagesRef.current = messages
+  const { track } = useLoading()
+  const userName = profile.name?.split(' ')[0] || undefined
 
   const historyForApi = useCallback(
     (extraUser?: string) => {
@@ -82,24 +86,28 @@ export function NudgeScreen({
 
       try {
         if (imageBase64) {
-          // TODO: integrate with /api/analyse for full vision support
-          const { analysis } = await analyseImage({
-            image: imageBase64,
-            mimeType: imageMime,
-            mode: 'identify',
-            trade: profile.trade,
-          })
+          const { analysis } = await track(
+            analyseImage({
+              image: imageBase64,
+              mimeType: imageMime,
+              mode: 'identify',
+              trade: profile.trade,
+            }),
+          )
           setMessages((prev) => [
             ...prev,
             { role: 'assistant', content: analysis, timestamp: Date.now() },
           ])
         } else {
-          const reply = await streamChatMessage({
-            messages: historyForApi(messageToSend),
-            trade: profile.trade,
-            jobContext: job ? buildJobContext(job) : undefined,
-            onToken: (token) => setStreamingText((prev) => prev + token),
-          })
+          const reply = await track(
+            streamChatMessage({
+              messages: historyForApi(messageToSend),
+              trade: profile.trade,
+              jobContext: job ? buildJobContext(job) : undefined,
+              userName,
+              onToken: (token) => setStreamingText((prev) => prev + token),
+            }),
+          )
           setStreamingText('')
           setMessages((prev) => [
             ...prev,
@@ -115,7 +123,7 @@ export function NudgeScreen({
         setLoading(false)
       }
     },
-    [historyForApi, imageMime, job, loading, profile.trade, showToast],
+    [historyForApi, imageMime, job, loading, profile.trade, showToast, track, userName],
   )
 
   useEffect(() => {
@@ -273,7 +281,11 @@ export function NudgeScreen({
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white disabled:opacity-30"
             aria-label="Send"
           >
-            <ArrowUp size={18} strokeWidth={2} className="text-black" />
+            {loading ? (
+              <ButtonSpinner className="h-3 w-3 border-black/20 border-t-black" />
+            ) : (
+              <ArrowUp size={18} strokeWidth={2} className="text-black" />
+            )}
           </button>
         </div>
       </div>

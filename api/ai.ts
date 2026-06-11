@@ -43,10 +43,13 @@ Formatting:
 When listing steps, items, or options — always use markdown bullet points (- item).
 Never write lists as comma-separated sentences when a bullet list would be clearer.`
 
-const buildSystemPrompt = (trade?: string, jobContext?: string): string => {
+const buildSystemPrompt = (trade?: string, jobContext?: string, userName?: string): string => {
   let prompt = BASE_NUDGE_PROMPT
   if (trade) prompt += `\n\nThe user is a ${trade}.`
   if (jobContext) prompt += `\n\nJob context:\n${jobContext}`
+  if (userName) {
+    prompt += `\n\nThe user's name is ${userName}. You can refer to them by name occasionally — but don't overdo it.`
+  }
   return prompt
 }
 
@@ -89,11 +92,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     messages?: ChatMsg[]
     trade?: string
     jobContext?: string
+    userName?: string
     stream?: boolean
   }
 
   const trade = body.trade
   const jobContext = body.jobContext
+  const userName = body.userName
   const stream = body.stream === true
 
   let chatMessages: ChatMsg[] = []
@@ -109,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const openRouterMessages = [
-    { role: 'system', content: buildSystemPrompt(trade, jobContext) },
+    { role: 'system', content: buildSystemPrompt(trade, jobContext, userName) },
     ...chatMessages.map((m) => ({ role: m.role, content: m.content })),
   ]
 

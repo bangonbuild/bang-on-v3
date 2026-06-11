@@ -1,7 +1,8 @@
-import { ArrowLeft } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { X } from 'lucide-react'
 import { useState } from 'react'
+import { ButtonSpinner } from '../components/ButtonSpinner'
 import type { Job, JobStatus } from '../types'
-import { NAV_PB } from '../utils/layout'
 
 interface JobFormScreenProps {
   job?: Job
@@ -16,11 +17,29 @@ interface JobFormScreenProps {
   }) => void
   onDelete?: () => void
   embedded?: boolean
+  drawer?: boolean
+  open?: boolean
 }
 
 const statuses: JobStatus[] = ['active', 'on-hold', 'complete']
 
-export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false }: JobFormScreenProps) {
+function JobFormFields({
+  job,
+  onSave,
+  onDelete,
+  onBack,
+  embedded,
+  saving,
+  setSaving,
+}: {
+  job?: Job
+  onSave: JobFormScreenProps['onSave']
+  onDelete?: () => void
+  onBack: () => void
+  embedded?: boolean
+  saving: boolean
+  setSaving: (v: boolean) => void
+}) {
   const [name, setName] = useState(job?.name ?? '')
   const [client, setClient] = useState(job?.client ?? '')
   const [email, setEmail] = useState(job?.email ?? '')
@@ -30,11 +49,19 @@ export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false 
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
+  const hasFilledFields = Boolean(name.trim() || client.trim() || phone.trim() || email.trim() || address.trim())
+
+  const requestClose = () => {
+    if (hasFilledFields && !window.confirm('Discard changes?')) return
+    onBack()
+  }
+
   const handleSubmit = () => {
     if (!name.trim() || !client.trim() || !phone.trim()) {
       setError('Job name, client name, and phone are required.')
       return
     }
+    setSaving(true)
     onSave({
       name: name.trim(),
       client: client.trim(),
@@ -43,6 +70,7 @@ export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false 
       address: address.trim(),
       status,
     })
+    setSaving(false)
   }
 
   const handleDelete = () => {
@@ -54,31 +82,11 @@ export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false 
   }
 
   const inputClass =
-    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-[var(--color-text-primary)]'
+    'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]'
 
   return (
-    <div className={`px-4 pt-6 ${embedded ? 'pb-8' : NAV_PB}`}>
-      <header className={`flex items-center gap-3 ${embedded ? 'justify-between' : ''}`}>
-        {!embedded && (
-          <button type="button" onClick={onBack} className="flex h-12 w-12 items-center justify-center">
-            <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
-          </button>
-        )}
-        <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">
-          {job ? 'Edit job' : 'New job'}
-        </h1>
-        {embedded && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="font-body text-sm text-[var(--color-text-secondary)]"
-          >
-            Cancel
-          </button>
-        )}
-      </header>
-
-      <div className="mt-6 flex flex-col gap-4">
+    <>
+      <div className={`flex flex-col gap-4 ${embedded ? '' : 'px-5 pb-6'}`}>
         <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
           Job name
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
@@ -102,6 +110,7 @@ export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false 
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
         </label>
         <div>
+          {/* TODO: address lookup integration */}
           <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
             Address
             <input
@@ -133,9 +142,10 @@ export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false 
         <button
           type="button"
           onClick={handleSubmit}
-          className="min-h-[48px] rounded-xl btn-primary font-body font-medium"
+          disabled={saving}
+          className="flex min-h-[48px] items-center justify-center rounded-xl bg-white font-body font-medium text-black disabled:opacity-50"
         >
-          {job ? 'Save changes' : 'Create job'}
+          {saving ? <ButtonSpinner className="border-black/20 border-t-black" /> : job ? 'Save changes' : 'Create job'}
         </button>
 
         {job && onDelete && (
@@ -154,7 +164,103 @@ export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false 
             </button>
           </>
         )}
+
+        {embedded && (
+          <button type="button" onClick={requestClose} className="font-body text-sm text-[var(--color-text-secondary)]">
+            Cancel
+          </button>
+        )}
       </div>
-    </div>
+    </>
   )
+}
+
+export function JobFormScreen({
+  job,
+  onBack,
+  onSave,
+  onDelete,
+  embedded = false,
+  drawer = false,
+  open = true,
+}: JobFormScreenProps) {
+  const [saving, setSaving] = useState(false)
+
+  const tryClose = () => {
+    onBack()
+  }
+
+  if (drawer) {
+    return (
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[80] bg-[rgba(0,0,0,0.6)]"
+              onClick={tryClose}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ duration: 0.35, type: 'spring', bounce: 0.15 }}
+              className="fixed bottom-0 left-0 right-0 z-[81] flex max-h-[90vh] flex-col overflow-hidden rounded-t-[20px] bg-[var(--color-surface)]"
+            >
+              <div className="flex shrink-0 justify-center pt-3">
+                <div className="h-1 w-10 rounded-full bg-[var(--color-border-2)]" />
+              </div>
+              <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-1">
+                <h2 className="font-display text-[20px] font-bold text-[var(--color-text-primary)]">
+                  {job ? 'Edit job' : 'New job'}
+                </h2>
+                <button type="button" onClick={tryClose} className="min-h-[48px] min-w-[48px]" aria-label="Close">
+                  <X size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <JobFormFields
+                  job={job}
+                  onSave={onSave}
+                  onDelete={onDelete}
+                  onBack={tryClose}
+                  saving={saving}
+                  setSaving={setSaving}
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    )
+  }
+
+  if (embedded) {
+    return (
+      <div className="h-full overflow-y-auto px-4 pt-6 pb-8">
+        <header className="flex items-center justify-between">
+          <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">
+            {job ? 'Edit job' : 'New job'}
+          </h1>
+        </header>
+        <div className="mt-6">
+          <JobFormFields
+            job={job}
+            onSave={onSave}
+            onDelete={onDelete}
+            onBack={onBack}
+            embedded
+            saving={saving}
+            setSaving={setSaving}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }

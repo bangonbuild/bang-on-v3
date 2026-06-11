@@ -7,6 +7,8 @@ import { PhotoReportGenerator } from './components/PhotoReportGenerator'
 import { QuoteGenerator } from './components/QuoteGenerator'
 import { SnapDrawer } from './components/SnapDrawer'
 import { SplashScreen } from './components/SplashScreen'
+import { SettingsDrawer } from './components/SettingsDrawer'
+import { LoadingProvider } from './hooks/useLoading'
 import { Toast } from './components/Toast'
 import { WeatherModal } from './components/WeatherModal'
 import { useJobs } from './hooks/useJobs'
@@ -24,7 +26,6 @@ import { JobFormScreen } from './screens/JobFormScreen'
 import { JobsScreen } from './screens/JobsScreen'
 import { MeasureScreen } from './screens/MeasureScreen'
 import { MoneyScreen } from './screens/MoneyScreen'
-import { SettingsScreen } from './screens/SettingsScreen'
 import { SnapScreen } from './screens/SnapScreen'
 import { SuggestToolScreen } from './screens/SuggestToolScreen'
 import { SupportScreen } from './screens/SupportScreen'
@@ -55,7 +56,11 @@ export default function App() {
     return <PortalScreen />
   }
 
-  return <AppMain />
+  return (
+    <LoadingProvider>
+      <AppMain />
+    </LoadingProvider>
+  )
 }
 
 function AppMain() {
@@ -116,8 +121,7 @@ function AppMain() {
 
   const closeSettings = useCallback(() => {
     setOverlay({ type: 'none' })
-    if (!isDesktop) setTab('home')
-  }, [isDesktop])
+  }, [])
 
   const closeQuote = useCallback(() => {
     if (overlay.type === 'quote' && overlay.jobId && !overlay.moneyRecordId) {
@@ -203,19 +207,18 @@ function AppMain() {
   const hideNav =
     isDesktop ||
     overlay.type === 'snap' ||
-    overlay.type === 'job-form' ||
     overlay.type === 'quote' ||
     overlay.type === 'photo-report' ||
     overlay.type === 'measure' ||
     overlay.type === 'suggest-tool' ||
-    overlay.type === 'settings' ||
     overlay.type === 'support'
 
   const showMainContent =
     overlay.type === 'none' ||
     overlay.type === 'job-detail' ||
     overlay.type === 'settings' ||
-    overlay.type === 'support'
+    overlay.type === 'support' ||
+    overlay.type === 'job-form'
 
   const renderTab = () => {
     switch (tab) {
@@ -327,30 +330,6 @@ function AppMain() {
   }
 
   const renderOverlay = () => {
-    if (overlay.type === 'settings') {
-      return (
-        <motion.div
-          initial={isDesktop ? { opacity: 0 } : { x: '100%', opacity: 0 }}
-          animate={isDesktop ? { opacity: 1 } : { x: 0, opacity: 1 }}
-          exit={isDesktop ? { opacity: 0 } : { x: '100%', opacity: 0 }}
-          transition={{ duration: isDesktop ? 0.15 : 0.25, ease: 'easeInOut' }}
-          className="h-full overflow-y-auto"
-        >
-          <SettingsScreen
-            profile={profile}
-            setProfile={setProfile}
-            payment={payment}
-            setPayment={setPayment}
-            onClearChats={clearChats}
-            showToast={showToast}
-            theme={theme}
-            setTheme={setTheme}
-            onBack={closeSettings}
-            onSupport={() => setOverlay({ type: 'support' })}
-          />
-        </motion.div>
-      )
-    }
     if (overlay.type === 'support') {
       return (
         <motion.div
@@ -444,37 +423,7 @@ function AppMain() {
       )
     }
     if (overlay.type === 'job-form') {
-      const existing = overlay.jobId ? getJob(overlay.jobId) : undefined
-      return (
-        <JobFormScreen
-          job={existing}
-          onBack={() => {
-            if (overlay.returnToJobId) goToJobDetail(overlay.returnToJobId)
-            else closeOverlay()
-          }}
-          onSave={(data) => {
-            if (existing) {
-              updateJob(existing.id, data)
-              showToast('Changes saved.', 'success')
-              goToJobDetail(existing.id)
-            } else {
-              const created = addJob(data)
-              showToast('Job created.', 'success')
-              goToJobDetail(created.id)
-            }
-          }}
-          onDelete={
-            existing
-              ? () => {
-                  deleteJob(existing.id)
-                  showToast('Job deleted.', 'success')
-                  closeOverlay()
-                  setTab('jobs')
-                }
-              : undefined
-          }
-        />
-      )
+      return null
     }
     if (overlay.type === 'quote') {
       const job = overlay.jobId ? getJob(overlay.jobId) : undefined
@@ -635,16 +584,15 @@ function AppMain() {
   }
 
   const overlaySlide =
-    !isDesktop &&
-    (overlay.type === 'job-detail' ||
-      overlay.type === 'settings' ||
-      overlay.type === 'support')
+    !isDesktop && (overlay.type === 'job-detail' || overlay.type === 'support')
 
   const overlayKey =
     overlay.type +
     ('jobId' in overlay && overlay.jobId ? overlay.jobId : '') +
     ('moneyRecordId' in overlay && overlay.moneyRecordId ? overlay.moneyRecordId : '') +
     ('reportId' in overlay && overlay.reportId ? overlay.reportId : '')
+
+  const jobFormExisting = overlay.type === 'job-form' && overlay.jobId ? getJob(overlay.jobId) : undefined
 
   return (
     <div
@@ -736,6 +684,52 @@ function AppMain() {
         onClose={() => setWeatherOpen(false)}
         onRefresh={weather.refresh}
       />
+      <SettingsDrawer
+        open={overlay.type === 'settings'}
+        onClose={closeSettings}
+        isDesktop={isDesktop}
+        profile={profile}
+        setProfile={setProfile}
+        payment={payment}
+        setPayment={setPayment}
+        onClearChats={clearChats}
+        showToast={showToast}
+        theme={theme}
+        setTheme={setTheme}
+        onSupport={() => setOverlay({ type: 'support' })}
+      />
+      {overlay.type === 'job-form' && (
+        <JobFormScreen
+          drawer
+          open
+          job={jobFormExisting}
+          onBack={() => {
+            if (overlay.returnToJobId) goToJobDetail(overlay.returnToJobId)
+            else closeOverlay()
+          }}
+          onSave={(data) => {
+            if (jobFormExisting) {
+              updateJob(jobFormExisting.id, data)
+              showToast('Changes saved.', 'success')
+              goToJobDetail(jobFormExisting.id)
+            } else {
+              const created = addJob(data)
+              showToast('Job created.', 'success')
+              goToJobDetail(created.id)
+            }
+          }}
+          onDelete={
+            jobFormExisting
+              ? () => {
+                  deleteJob(jobFormExisting.id)
+                  showToast('Job deleted.', 'success')
+                  closeOverlay()
+                  setTab('jobs')
+                }
+              : undefined
+          }
+        />
+      )}
     </div>
   )
 }

@@ -6,6 +6,7 @@ export async function sendChatMessage(params: {
   messages: ChatHistoryMessage[]
   trade?: string
   jobContext?: string
+  userName?: string
   signal?: AbortSignal
 }): Promise<string> {
   const controller = new AbortController()
@@ -20,6 +21,7 @@ export async function sendChatMessage(params: {
         messages: params.messages,
         trade: params.trade,
         jobContext: params.jobContext,
+        userName: params.userName,
         stream: false,
       }),
       signal,
@@ -36,6 +38,7 @@ export async function streamChatMessage(params: {
   messages: ChatHistoryMessage[]
   trade?: string
   jobContext?: string
+  userName?: string
   onToken: (token: string) => void
   signal?: AbortSignal
 }): Promise<string> {
@@ -51,6 +54,7 @@ export async function streamChatMessage(params: {
         messages: params.messages,
         trade: params.trade,
         jobContext: params.jobContext,
+        userName: params.userName,
         stream: true,
       }),
       signal,

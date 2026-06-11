@@ -11,7 +11,6 @@ const EXAMPLE_JOB: Job = {
   phone: '',
   address: '',
   status: 'active',
-  attention: 'Plumbing done — ready for pour',
   timeline: [],
   createdAt: Date.now(),
   updatedAt: Date.now(),
