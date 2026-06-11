@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { useRef, useState } from 'react'
 import { reportMarkdownComponents } from '../utils/markdownComponents'
+import { ShareUpdateModal } from './ShareUpdateModal'
 import { generateDocument, mapFetchError } from '../services/aiService'
 import type { Job, PaymentDetails, PhotoReportResult, Profile, SavedPhotoReport } from '../types'
 import { NAV_PB } from '../utils/layout'
@@ -78,6 +79,7 @@ export function PhotoReportGenerator({
       : null,
   )
   const [error, setError] = useState<string | null>(null)
+  const [shareOpen, setShareOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const viewOnly = Boolean(savedReport)
 
@@ -144,7 +146,10 @@ Use bullet points for lists of items. Write in clear Australian English.`
   }
 
   if (report) {
+    const sharePrefill = `Your site progress report for ${report.jobName ?? job?.name ?? 'your project'} is ready. Click below to view.`
+
     return (
+      <>
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
@@ -174,7 +179,7 @@ Use bullet points for lists of items. Write in clear Australian English.`
         </div>
         <div className="fixed bottom-0 left-0 right-0 flex flex-col gap-2 border-t border-black/10 bg-white p-4">
           <div className="flex gap-2">
-            <button type="button" onClick={() => showToast('Sharing coming soon.', 'info')} className={actionBtnClass}>
+            <button type="button" onClick={() => setShareOpen(true)} className={actionBtnClass}>
               Share with client
             </button>
             <button type="button" onClick={() => showToast('Download coming soon.', 'info')} className={actionBtnClass}>
@@ -208,6 +213,14 @@ Use bullet points for lists of items. Write in clear Australian English.`
           )}
         </div>
       </motion.div>
+      <ShareUpdateModal
+        job={job ?? null}
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        prefillMessage={sharePrefill}
+        showToast={showToast}
+      />
+      </>
     )
   }
 

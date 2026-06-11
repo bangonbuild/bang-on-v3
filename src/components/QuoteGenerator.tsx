@@ -2,6 +2,7 @@ import { ArrowLeft, Loader2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { QuoteOverlay } from './QuoteOverlay'
+import { ShareUpdateModal } from './ShareUpdateModal'
 import { Toggle } from './Toggle'
 import { generateDocument, mapFetchError } from '../services/aiService'
 import type { GeneratedDocument, Job, MoneyRecord, PaymentDetails, Profile, QuoteLineItem } from '../types'
@@ -83,6 +84,7 @@ export function QuoteGenerator({
   )
   const [error, setError] = useState<string | null>(null)
   const [fromGeneration, setFromGeneration] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const updateLine = (index: number, field: keyof QuoteLineItem, value: string | number) => {
     setLineItems((items) =>
@@ -227,12 +229,20 @@ Keep it practical for a tradie. Australian English.`
   if (doc) {
     const editing = (isTimelineView && timelineEditMode) || (isMoneyView && moneyEdit)
     const inViewMode = (isTimelineView && !timelineEditMode) || (isMoneyView && !moneyEdit)
+    const sharePrefill =
+      job && doc
+        ? doc.type === 'quote'
+          ? `Your quote for ${job.name} is ready. Total: $${doc.total.toLocaleString()}. Click below to view.`
+          : `Your invoice for ${job.name} is ready. Total: $${doc.total.toLocaleString()}. Click below to view.`
+        : undefined
+
     return (
+      <>
       <QuoteOverlay
         doc={doc}
         payment={payment}
         onClose={onClose}
-        onShare={() => showToast('Sharing coming soon.', 'info')}
+        onShare={() => setShareOpen(true)}
         onDownload={() => showToast('Download coming soon.', 'info')}
         onSave={isFirstGen ? handleFirstGenSave : undefined}
         showSave={false}
@@ -264,6 +274,16 @@ Keep it practical for a tradie. Australian English.`
             : undefined
         }
       />
+      <ShareUpdateModal
+        job={job ?? null}
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        prefillMessage={sharePrefill}
+        includeDocDefault
+        docEntryId={editEntryId}
+        showToast={showToast}
+      />
+      </>
     )
   }
 

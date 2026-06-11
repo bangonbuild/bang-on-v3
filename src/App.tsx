@@ -29,6 +29,7 @@ import { SnapScreen } from './screens/SnapScreen'
 import { SuggestToolScreen } from './screens/SuggestToolScreen'
 import { SupportScreen } from './screens/SupportScreen'
 import { ToolboxScreen } from './screens/ToolboxScreen'
+import { PortalScreen } from './screens/PortalScreen'
 import type { GeneratedDocument, JobFilter, SnapMode, TabId, TimelineEntry } from './types'
 import { moneyRecordToDoc } from './utils/moneyHelpers'
 import { getInitialTab } from './utils/getInitialTab'
@@ -50,6 +51,14 @@ type Overlay =
   | { type: 'support' }
 
 export default function App() {
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/portal/')) {
+    return <PortalScreen />
+  }
+
+  return <AppMain />
+}
+
+function AppMain() {
   const isDesktop = useDesktop()
   const [splash, setSplash] = useState(true)
   const [tab, setTab] = useState<TabId>(() =>

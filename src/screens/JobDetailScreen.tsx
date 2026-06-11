@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
+  Eye,
+  EyeOff,
   FileText,
   ImageIcon,
   MapPin,
@@ -64,7 +66,7 @@ export function JobDetailScreen({
   onPhotoReport,
   onAddNote,
   onAddPhoto,
-  onUpdateEntry: _onUpdateEntry,
+  onUpdateEntry,
   onOpenDoc,
   showToast,
   initialTab,
@@ -331,7 +333,14 @@ export function JobDetailScreen({
             ) : (
               <div className="flex flex-col gap-3">
                 {job.timeline.map((entry) => (
-                  <TimelineItem key={entry.id} entry={entry} onOpenDoc={() => onOpenDoc(entry)} />
+                  <TimelineItem
+                    key={entry.id}
+                    entry={entry}
+                    onOpenDoc={() => onOpenDoc(entry)}
+                    onToggleVisibility={() =>
+                      onUpdateEntry(entry.id, { clientVisible: !entry.clientVisible })
+                    }
+                  />
                 ))}
               </div>
             )}
@@ -492,9 +501,11 @@ export function JobDetailScreen({
 function TimelineItem({
   entry,
   onOpenDoc,
+  onToggleVisibility,
 }: {
   entry: TimelineEntry
   onOpenDoc: () => void
+  onToggleVisibility: () => void
 }) {
   const iconProps = {
     size: 18 as const,
@@ -503,9 +514,27 @@ function TimelineItem({
     style: { display: 'block' as const },
   }
 
+  const visible = entry.clientVisible === true
+  const visibilityBtn = (
+    <button
+      type="button"
+      onClick={onToggleVisibility}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-[var(--color-surface-2)]"
+      aria-label={visible ? 'Visible to client' : 'Hidden from client'}
+      title={visible ? 'Visible to client' : 'Hidden from client'}
+    >
+      {visible ? (
+        <Eye size={16} strokeWidth={1.5} className="text-[var(--color-text-secondary)]" />
+      ) : (
+        <EyeOff size={16} strokeWidth={1.5} className="text-[var(--color-text-tertiary)]" />
+      )}
+    </button>
+  )
+
   if (entry.type === 'photo' && entry.imageUrl) {
     return (
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="mb-2 flex justify-end">{visibilityBtn}</div>
         <img src={entry.imageUrl} alt="" className="w-full rounded-xl object-cover" />
         {entry.content && (
           <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
@@ -519,11 +548,12 @@ function TimelineItem({
 
   if (entry.type === 'quote' || entry.type === 'invoice') {
     return (
-      <button
-        type="button"
-        onClick={onOpenDoc}
-        className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
-      >
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <button
+          type="button"
+          onClick={onOpenDoc}
+          className="flex flex-1 items-center gap-3 text-left"
+        >
         <span style={{ display: 'block' }}>
           {entry.type === 'quote' ? (
             <ReceiptText {...iconProps} />
@@ -539,13 +569,16 @@ function TimelineItem({
             {formatRelativeTime(entry.timestamp)}
           </p>
         </div>
-      </button>
+        </button>
+        {visibilityBtn}
+      </div>
     )
   }
 
   if (entry.type === 'photo-report') {
     return (
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="flex justify-end">{visibilityBtn}</div>
         <span style={{ display: 'block' }}>
           <ImageIcon {...iconProps} />
         </span>
@@ -559,9 +592,12 @@ function TimelineItem({
 
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-      <span style={{ display: 'block' }}>
-        <StickyNote {...iconProps} />
-      </span>
+      <div className="flex items-start justify-between gap-2">
+        <span style={{ display: 'block' }}>
+          <StickyNote {...iconProps} />
+        </span>
+        {visibilityBtn}
+      </div>
       <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
       <p className="mt-1 font-body text-xs text-[var(--color-text-tertiary)]">
         {formatRelativeTime(entry.timestamp)}

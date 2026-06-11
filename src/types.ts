@@ -10,6 +10,7 @@ export interface TimelineEntry {
   imageUrl?: string
   amount?: number
   timestamp: number
+  clientVisible?: boolean
 }
 
 export interface Job {
