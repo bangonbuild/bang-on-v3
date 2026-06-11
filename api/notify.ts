@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const portalUrl = `${APP_URL}/portal/${job.id}`
 
     await resend.emails.send({
-      from: 'datum.ai <notifications@getdatum.ai>',
+      from: 'datum.ai <onboarding@resend.dev>',
       to: clientEmail,
       subject: `Update on ${job.name}`,
       html: buildEmailTemplate({
