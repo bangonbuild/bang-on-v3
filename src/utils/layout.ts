@@ -1,6 +1,12 @@
 /** Standard bottom padding clearing the bottom nav + safe area */
 export const NAV_PB = 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]'
 
+/** Desktop sidebar width */
+export const DESKTOP_SIDEBAR_WIDTH = '240px'
+
+/** Bottom padding on desktop (no bottom nav) */
+export const DESKTOP_PB = 'pb-8'
+
 /** Bottom offset for fixed elements above the nav */
 export const NAV_BOTTOM = 'calc(3.5rem + env(safe-area-inset-bottom))'
 

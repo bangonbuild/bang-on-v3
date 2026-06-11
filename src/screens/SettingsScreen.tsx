@@ -3,10 +3,11 @@ import { ScreenTitle } from '../components/ScreenTitle'
 import { useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { Icon } from '../components/Icon'
+import { useDesktop } from '../hooks/useDesktop'
 import type { PaymentDetails, Profile, Teammate } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import type { ShowToastFn } from '../hooks/useToast'
-import { NAV_PB } from '../utils/layout'
+import { DESKTOP_PB, NAV_PB } from '../utils/layout'
 import { generateId, loadJson, saveJson, STORAGE_KEYS } from '../utils/storage'
 
 const TRADES = [
@@ -51,6 +52,7 @@ export function SettingsScreen({
   onBack,
   onSupport,
 }: SettingsScreenProps) {
+  const isDesktop = useDesktop()
   const [settingsTab, setSettingsTab] = useState<'profile' | 'team' | 'app'>('profile')
   const [profileEditing, setProfileEditing] = useState(!hasProfileData(profile))
   const [paymentEditing, setPaymentEditing] = useState(!hasPaymentData(payment))
@@ -93,11 +95,13 @@ export function SettingsScreen({
   }
 
   return (
-    <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
-          <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
-        </button>
+    <div className={`${isDesktop ? 'px-10 pt-8' : 'px-4 pt-6'} ${isDesktop ? DESKTOP_PB : NAV_PB}`}>
+      <header className={`flex items-center gap-3 ${isDesktop ? 'mb-0' : ''}`}>
+        {!isDesktop && (
+          <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
+            <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
+          </button>
+        )}
         <ScreenTitle>Settings</ScreenTitle>
       </header>
 
@@ -129,23 +133,25 @@ export function SettingsScreen({
       />
       {profileEditing ? (
         <div className="mt-2 flex flex-col gap-3">
-          <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
-            Full name
-            <input
-              value={draftProfile.name}
-              onChange={(e) => setDraftProfile({ ...draftProfile, name: e.target.value })}
-              className={inputClass}
-            />
-          </label>
-          <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
-            Phone number
-            <input
-              type="tel"
-              value={draftProfile.phone}
-              onChange={(e) => setDraftProfile({ ...draftProfile, phone: e.target.value })}
-              className={inputClass}
-            />
-          </label>
+          <div className={isDesktop ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
+            <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+              Full name
+              <input
+                value={draftProfile.name}
+                onChange={(e) => setDraftProfile({ ...draftProfile, name: e.target.value })}
+                className={inputClass}
+              />
+            </label>
+            <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+              Phone number
+              <input
+                type="tel"
+                value={draftProfile.phone}
+                onChange={(e) => setDraftProfile({ ...draftProfile, phone: e.target.value })}
+                className={inputClass}
+              />
+            </label>
+          </div>
           <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
             Email
             <input
@@ -226,16 +232,40 @@ export function SettingsScreen({
       </p>
       {paymentEditing ? (
         <div className="mt-2 flex flex-col gap-3">
-          {(['businessName', 'abn', 'bsb', 'account'] as const).map((key) => (
-            <label key={key} className="font-body text-[13px] text-[var(--color-text-secondary)]">
-              {key === 'businessName' ? 'Business name' : key.toUpperCase()}
+          <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+            Business name
+            <input
+              value={draftPayment.businessName}
+              onChange={(e) => setDraftPayment({ ...draftPayment, businessName: e.target.value })}
+              className={inputClass}
+            />
+          </label>
+          <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+            ABN
+            <input
+              value={draftPayment.abn}
+              onChange={(e) => setDraftPayment({ ...draftPayment, abn: e.target.value })}
+              className={inputClass}
+            />
+          </label>
+          <div className={isDesktop ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
+            <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+              BSB
               <input
-                value={draftPayment[key]}
-                onChange={(e) => setDraftPayment({ ...draftPayment, [key]: e.target.value })}
+                value={draftPayment.bsb}
+                onChange={(e) => setDraftPayment({ ...draftPayment, bsb: e.target.value })}
                 className={inputClass}
               />
             </label>
-          ))}
+            <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
+              Account
+              <input
+                value={draftPayment.account}
+                onChange={(e) => setDraftPayment({ ...draftPayment, account: e.target.value })}
+                className={inputClass}
+              />
+            </label>
+          </div>
           <input
             ref={logoRef}
             type="file"

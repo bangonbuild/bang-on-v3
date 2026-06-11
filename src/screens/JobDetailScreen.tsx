@@ -40,6 +40,7 @@ interface JobDetailScreenProps {
   onOpenDoc: (entry: TimelineEntry) => void
   showToast: ShowToastFn
   initialTab?: JobTab
+  embedded?: boolean
 }
 
 const invoiceStatusStyle: Record<string, { bg: string; text: string }> = {
@@ -67,6 +68,7 @@ export function JobDetailScreen({
   onOpenDoc,
   showToast,
   initialTab,
+  embedded = false,
 }: JobDetailScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [noteModalOpen, setNoteModalOpen] = useState(false)
@@ -166,11 +168,17 @@ export function JobDetailScreen({
     }`
 
   return (
-    <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-6 ${NAV_PB}`}>
-      <div className="flex items-center justify-between">
-        <button type="button" onClick={onBack} className="flex h-12 w-12 shrink-0 items-center justify-center">
-          <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
-        </button>
+    <div
+      className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-6 ${
+        embedded ? 'pb-8' : NAV_PB
+      }`}
+    >
+      <div className={`flex items-center justify-between ${embedded ? 'justify-end' : ''}`}>
+        {!embedded && (
+          <button type="button" onClick={onBack} className="flex h-12 w-12 shrink-0 items-center justify-center">
+            <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
+          </button>
+        )}
         <button
           type="button"
           onClick={onEdit}

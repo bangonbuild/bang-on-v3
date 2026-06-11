@@ -1,5 +1,5 @@
 import { ArrowLeft, ChevronRight, Loader2 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { analyseImage, mapFetchError } from '../services/aiService'
 import type { Profile, SnapMode } from '../types'
@@ -17,6 +17,8 @@ interface SnapScreenProps {
   onBack: () => void
   onNavigateToNudge: () => void
   onAddToJob?: (analysis: string, imageUrl: string) => void
+  initialFile?: File
+  fileOnly?: boolean
 }
 
 const modeLabels: Record<SnapMode, string> = {
@@ -41,6 +43,8 @@ export function SnapScreen({
   onBack,
   onNavigateToNudge,
   onAddToJob,
+  initialFile,
+  fileOnly = false,
 }: SnapScreenProps) {
   const [step, setStep] = useState<SnapStep>('capture')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -64,6 +68,21 @@ export function SnapScreen({
     setPreviewUrl(URL.createObjectURL(f))
     setStep('preview')
   }
+
+  useEffect(() => {
+    if (initialFile) {
+      if (initialFile.size > MAX_SIZE) {
+        setError('Photo too large. Try a lower resolution shot.')
+        return
+      }
+      setError(null)
+      setFile(initialFile)
+      setPreviewUrl(URL.createObjectURL(initialFile))
+      setStep('preview')
+    } else if (fileOnly) {
+      libraryRef.current?.click()
+    }
+  }, [initialFile, fileOnly])
 
   const runAnalyse = async () => {
     if (!file) return
@@ -122,7 +141,7 @@ export function SnapScreen({
         <h1 className="font-display text-base text-[var(--color-text-primary)]">{modeLabels[mode]}</h1>
       </header>
 
-      {step === 'capture' && (
+      {step === 'capture' && !fileOnly && (
         <div className="mt-6 flex flex-1 flex-col">
           <input
             ref={cameraRef}
@@ -154,6 +173,16 @@ export function SnapScreen({
             Choose from library
           </button>
         </div>
+      )}
+
+      {step === 'capture' && fileOnly && (
+        <input
+          ref={libraryRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
       )}
 
       {(step === 'preview' || step === 'loading') && previewUrl && (

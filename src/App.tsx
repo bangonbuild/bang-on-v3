@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
 import { BottomNav } from './components/BottomNav'
+import { DesktopSidebar } from './components/DesktopSidebar'
 import { NudgeDrawer } from './components/NudgeDrawer'
 import { PhotoReportGenerator } from './components/PhotoReportGenerator'
 import { QuoteGenerator } from './components/QuoteGenerator'
@@ -9,6 +10,7 @@ import { SplashScreen } from './components/SplashScreen'
 import { Toast } from './components/Toast'
 import { WeatherModal } from './components/WeatherModal'
 import { useJobs } from './hooks/useJobs'
+import { useDesktop } from './hooks/useDesktop'
 import { useMoney } from './hooks/useMoney'
 import { usePhotoReports } from './hooks/usePhotoReports'
 import { useProfile } from './hooks/useProfile'
@@ -29,13 +31,15 @@ import { SupportScreen } from './screens/SupportScreen'
 import { ToolboxScreen } from './screens/ToolboxScreen'
 import type { GeneratedDocument, JobFilter, SnapMode, TabId, TimelineEntry } from './types'
 import { moneyRecordToDoc } from './utils/moneyHelpers'
+import { getInitialTab } from './utils/getInitialTab'
+import { DESKTOP_SIDEBAR_WIDTH } from './utils/layout'
 import { parseDocumentFromEntry, serializeDocument } from './utils/storage'
 
 type JobDetailTab = 'timeline' | 'invoices' | 'quotes'
 
 type Overlay =
   | { type: 'none' }
-  | { type: 'snap'; mode: SnapMode; jobId?: string }
+  | { type: 'snap'; mode: SnapMode; jobId?: string; initialFile?: File }
   | { type: 'job-detail'; jobId: string }
   | { type: 'job-form'; jobId?: string; returnToJobId?: string }
   | { type: 'quote'; docType: 'quote' | 'invoice'; jobId?: string; entryId?: string; moneyRecordId?: string }
@@ -46,8 +50,11 @@ type Overlay =
   | { type: 'support' }
 
 export default function App() {
+  const isDesktop = useDesktop()
   const [splash, setSplash] = useState(true)
-  const [tab, setTab] = useState<TabId>('home')
+  const [tab, setTab] = useState<TabId>(() =>
+    typeof window !== 'undefined' && window.innerWidth >= 1024 ? getInitialTab() : 'home',
+  )
   const [overlay, setOverlay] = useState<Overlay>({ type: 'none' })
   const [snapDrawerOpen, setSnapDrawerOpen] = useState(false)
   const [jobFilter, setJobFilter] = useState<JobFilter>('all')
@@ -55,6 +62,7 @@ export default function App() {
   const [jobDetailTab, setJobDetailTab] = useState<JobDetailTab | undefined>()
   const [nudgeOpen, setNudgeOpen] = useState(false)
   const [nudgeJobId, setNudgeJobId] = useState<string | undefined>()
+  const [desktopSelectedJobId, setDesktopSelectedJobId] = useState<string | null>(null)
 
   const { jobs, addJob, updateJob, deleteJob, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry, getJob } =
     useJobs()
@@ -81,17 +89,26 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [])
 
-  const goToJobDetail = useCallback((jobId: string, tab?: JobDetailTab) => {
-    setJobDetailTab(tab)
-    setOverlay({ type: 'job-detail', jobId })
-  }, [])
+  const goToJobDetail = useCallback(
+    (jobId: string, detailTab?: JobDetailTab) => {
+      setJobDetailTab(detailTab)
+      if (isDesktop) {
+        setDesktopSelectedJobId(jobId)
+        setTab('jobs')
+        setOverlay({ type: 'none' })
+      } else {
+        setOverlay({ type: 'job-detail', jobId })
+      }
+    },
+    [isDesktop],
+  )
 
   const closeOverlay = useCallback(() => setOverlay({ type: 'none' }), [])
 
   const closeSettings = useCallback(() => {
     setOverlay({ type: 'none' })
-    setTab('home')
-  }, [])
+    if (!isDesktop) setTab('home')
+  }, [isDesktop])
 
   const closeQuote = useCallback(() => {
     if (overlay.type === 'quote' && overlay.jobId && !overlay.moneyRecordId) {
@@ -130,10 +147,17 @@ export default function App() {
         setOverlay({ type: 'none' })
       }
       setNudgeOpen(false)
+      if (newTab !== 'jobs') {
+        setDesktopSelectedJobId(null)
+      }
       setTab(newTab)
     },
     [overlay.type],
   )
+
+  const handleUpload = useCallback((file: File) => {
+    setOverlay({ type: 'snap', mode: 'identify', initialFile: file })
+  }, [])
 
   const handleSnapFromDrawer = (mode: SnapMode) => {
     setOverlay({ type: 'snap', mode })
@@ -168,6 +192,7 @@ export default function App() {
   }
 
   const hideNav =
+    isDesktop ||
     overlay.type === 'snap' ||
     overlay.type === 'job-form' ||
     overlay.type === 'quote' ||
@@ -192,6 +217,7 @@ export default function App() {
             weather={weather}
             onWeatherClick={() => setWeatherOpen(true)}
             onSnap={() => setSnapDrawerOpen(true)}
+            onUpload={isDesktop ? handleUpload : undefined}
             onSpeak={handleSpeak}
             onJob={(id) => goToJobDetail(id)}
             onNewJob={() => setOverlay({ type: 'job-form' })}
@@ -206,6 +232,55 @@ export default function App() {
             onFilterChange={setJobFilter}
             onJob={(id) => goToJobDetail(id)}
             onNewJob={() => setOverlay({ type: 'job-form' })}
+            desktopHandlers={
+              isDesktop
+                ? {
+                    profile,
+                    getJobInvoices: (jobId) => invoices.filter((i) => i.jobId === jobId),
+                    getJobQuotes: (jobId) => quotes.filter((q) => q.jobId === jobId),
+                    onNudge: (jobId) => openNudge(jobId),
+                    onOpenMoneyRecord: (_jobId, record) =>
+                      setOverlay({
+                        type: 'quote',
+                        docType: record.type,
+                        jobId: record.jobId,
+                        moneyRecordId: record.id,
+                      }),
+                    onQuote: (jobId) => setOverlay({ type: 'quote', docType: 'quote', jobId }),
+                    onInvoice: (jobId) => setOverlay({ type: 'quote', docType: 'invoice', jobId }),
+                    onPhotoReport: (jobId) => setOverlay({ type: 'photo-report', jobId }),
+                    onAddNote: (jobId, content) => {
+                      addTimelineEntry(jobId, { type: 'note', content })
+                      showToast('Note added.', 'success')
+                    },
+                    onAddPhoto: (jobId, content, imageUrl) => {
+                      addTimelineEntry(jobId, { type: 'photo', content, imageUrl })
+                      showToast('Photo saved.', 'success')
+                    },
+                    onUpdateEntry: (jobId, entryId, updates) =>
+                      updateTimelineEntry(jobId, entryId, updates),
+                    onOpenDoc: (jobId, entry) => openDocFromTimeline(jobId, entry),
+                    onSaveJob: (data, existingId) => {
+                      if (existingId) {
+                        updateJob(existingId, data)
+                        showToast('Changes saved.', 'success')
+                        return existingId
+                      }
+                      const created = addJob(data)
+                      showToast('Job created.', 'success')
+                      return created.id
+                    },
+                    onDeleteJob: (jobId) => {
+                      deleteJob(jobId)
+                      showToast('Job deleted.', 'success')
+                    },
+                    showToast,
+                    initialDetailTab: jobDetailTab,
+                    selectedJobId: desktopSelectedJobId,
+                    onSelectJob: setDesktopSelectedJobId,
+                  }
+                : undefined
+            }
           />
         )
       case 'money':
@@ -246,10 +321,10 @@ export default function App() {
     if (overlay.type === 'settings') {
       return (
         <motion.div
-          initial={{ x: '100%', opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: '100%', opacity: 0 }}
-          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          initial={isDesktop ? { opacity: 0 } : { x: '100%', opacity: 0 }}
+          animate={isDesktop ? { opacity: 1 } : { x: 0, opacity: 1 }}
+          exit={isDesktop ? { opacity: 0 } : { x: '100%', opacity: 0 }}
+          transition={{ duration: isDesktop ? 0.15 : 0.25, ease: 'easeInOut' }}
           className="h-full overflow-y-auto"
         >
           <SettingsScreen
@@ -337,6 +412,8 @@ export default function App() {
           jobId={overlay.jobId}
           profile={profile}
           showToast={showToast}
+          initialFile={overlay.initialFile}
+          fileOnly={isDesktop && !overlay.initialFile}
           onBack={() => {
             if (overlay.jobId) goToJobDetail(overlay.jobId)
             else closeOverlay()
@@ -549,9 +626,10 @@ export default function App() {
   }
 
   const overlaySlide =
-    overlay.type === 'job-detail' ||
-    overlay.type === 'settings' ||
-    overlay.type === 'support'
+    !isDesktop &&
+    (overlay.type === 'job-detail' ||
+      overlay.type === 'settings' ||
+      overlay.type === 'support')
 
   const overlayKey =
     overlay.type +
@@ -560,8 +638,22 @@ export default function App() {
     ('reportId' in overlay && overlay.reportId ? overlay.reportId : '')
 
   return (
-    <div className="mx-auto flex h-full max-w-lg flex-col bg-[var(--color-bg)]">
+    <div
+      className={`flex h-full bg-[var(--color-bg)] ${
+        isDesktop ? '' : 'mx-auto max-w-lg flex-col'
+      }`}
+    >
       <AnimatePresence>{splash && <SplashScreen visible={splash} />}</AnimatePresence>
+
+      {isDesktop && !splash && (
+        <DesktopSidebar
+          active={tab}
+          onChange={handleTabChange}
+          onNudge={toggleNudge}
+          onOpenSettings={() => setOverlay({ type: 'settings' })}
+          profile={profile}
+        />
+      )}
 
       {!splash && (
         <motion.div
@@ -569,6 +661,7 @@ export default function App() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          style={isDesktop ? { marginLeft: DESKTOP_SIDEBAR_WIDTH } : undefined}
         >
           <main className="min-h-0 flex-1 overflow-hidden">
             {showMainContent ? (
@@ -609,6 +702,7 @@ export default function App() {
             profile={profile}
             onSaveChat={saveChat}
             showToast={showToast}
+            isDesktop={isDesktop}
           />
           {!hideNav && (
             <BottomNav

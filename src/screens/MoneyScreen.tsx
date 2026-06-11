@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { ScreenTitle } from '../components/ScreenTitle'
+import { useDesktop } from '../hooks/useDesktop'
 import type { MoneyRecord } from '../types'
 import { isInvoiceOverdue } from '../utils/moneyHelpers'
 import { sortInvoices } from '../utils/invoiceSort'
-import { NAV_PB } from '../utils/layout'
+import { DESKTOP_PB, NAV_PB } from '../utils/layout'
 import { formatDate } from '../utils/storage'
 
 interface MoneyScreenProps {
@@ -56,11 +57,63 @@ const DASHBOARD_COLUMNS = [
   { key: 'paid' as const, label: 'PAID / MONTH', color: '#34C759' },
 ]
 
-function MoneyDashboard({ stats }: { stats: MoneyScreenProps['stats'] }) {
+function StatCard({
+  label,
+  amount,
+  color,
+  stacked,
+}: {
+  label: string
+  amount: number
+  color: string
+  stacked?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5 ${
+        stacked ? 'w-full' : ''
+      }`}
+    >
+      <p className="font-display text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+        {label}
+      </p>
+      <p
+        className="font-display mt-1 truncate text-[22px] font-bold leading-none"
+        style={{ color }}
+      >
+        {formatMoney(amount)}
+      </p>
+    </div>
+  )
+}
+
+function MoneyDashboard({
+  stats,
+  stacked = false,
+}: {
+  stats: MoneyScreenProps['stats']
+  stacked?: boolean
+}) {
   const values = {
     outstanding: stats.outstanding,
     overdue: stats.overdue,
     paid: stats.paidThisMonth,
+  }
+
+  if (stacked) {
+    return (
+      <div className="flex flex-col gap-3">
+        {DASHBOARD_COLUMNS.map((col) => (
+          <StatCard
+            key={col.key}
+            label={col.label}
+            amount={values[col.key]}
+            color={col.color}
+            stacked
+          />
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -109,7 +162,58 @@ function ConnectTheBooks({ showToast }: { showToast: MoneyScreenProps['showToast
   )
 }
 
+function TabContent({
+  tab,
+  sortedInvoices,
+  sortedQuotes,
+  onOpenRecord,
+  showToast,
+}: {
+  tab: 'invoices' | 'quotes'
+  sortedInvoices: MoneyRecord[]
+  sortedQuotes: MoneyRecord[]
+  onOpenRecord: (record: MoneyRecord) => void
+  showToast: MoneyScreenProps['showToast']
+}) {
+  if (tab === 'invoices') {
+    return (
+      <>
+        {sortedInvoices.length === 0 ? (
+          <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
+            No invoices yet. Generate one from a job or the Toolbox.
+          </p>
+        ) : (
+          <div className="mt-4 flex flex-col gap-2">
+            {sortedInvoices.map((inv) => (
+              <MoneyRow key={inv.id} record={inv} type="invoice" onOpen={() => onOpenRecord(inv)} />
+            ))}
+          </div>
+        )}
+        <ConnectTheBooks showToast={showToast} />
+      </>
+    )
+  }
+
+  return (
+    <>
+      {sortedQuotes.length === 0 ? (
+        <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
+          No quotes yet. Generate one from a job or the Toolbox.
+        </p>
+      ) : (
+        <div className="mt-4 flex flex-col gap-2">
+          {sortedQuotes.map((q) => (
+            <MoneyRow key={q.id} record={q} type="quote" onOpen={() => onOpenRecord(q)} />
+          ))}
+        </div>
+      )}
+      <ConnectTheBooks showToast={showToast} />
+    </>
+  )
+}
+
 export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }: MoneyScreenProps) {
+  const isDesktop = useDesktop()
   const [tab, setTab] = useState<'invoices' | 'quotes'>('invoices')
   const sortedInvoices = sortInvoices(invoices)
   const sortedQuotes = [...quotes].sort((a, b) => b.createdAt - a.createdAt)
@@ -119,12 +223,45 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }
       tab === t ? 'chip-active' : 'chip-inactive'
     }`
 
+  const padClass = isDesktop ? DESKTOP_PB : NAV_PB
+  const containerClass = isDesktop ? `px-10 pt-8 ${padClass}` : `px-4 pt-6 ${padClass}`
+
+  if (isDesktop) {
+    return (
+      <div className={containerClass}>
+        <div className="mx-auto flex max-w-[960px] gap-10">
+          <div className="w-[360px] shrink-0">
+            <ScreenTitle>Money</ScreenTitle>
+            <div className="mt-6">
+              <MoneyDashboard stats={stats} stacked />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mt-4 flex gap-2">
+              <button type="button" onClick={() => setTab('invoices')} className={tabClass('invoices')}>
+                Invoices
+              </button>
+              <button type="button" onClick={() => setTab('quotes')} className={tabClass('quotes')}>
+                Quotes
+              </button>
+            </div>
+            <TabContent
+              tab={tab}
+              sortedInvoices={sortedInvoices}
+              sortedQuotes={sortedQuotes}
+              onOpenRecord={onOpenRecord}
+              showToast={showToast}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={`px-4 pt-6 ${NAV_PB}`}>
+    <div className={containerClass}>
       <ScreenTitle>Money</ScreenTitle>
-
       <MoneyDashboard stats={stats} />
-
       <div className="mt-4 flex gap-2">
         <button type="button" onClick={() => setTab('invoices')} className={tabClass('invoices')}>
           Invoices
@@ -133,40 +270,13 @@ export function MoneyScreen({ stats, invoices, quotes, onOpenRecord, showToast }
           Quotes
         </button>
       </div>
-
-      {tab === 'invoices' && (
-        <>
-          {sortedInvoices.length === 0 ? (
-            <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
-              No invoices yet. Generate one from a job or the Toolbox.
-            </p>
-          ) : (
-            <div className="mt-4 flex flex-col gap-2">
-              {sortedInvoices.map((inv) => (
-                <MoneyRow key={inv.id} record={inv} type="invoice" onOpen={() => onOpenRecord(inv)} />
-              ))}
-            </div>
-          )}
-          <ConnectTheBooks showToast={showToast} />
-        </>
-      )}
-
-      {tab === 'quotes' && (
-        <>
-          {sortedQuotes.length === 0 ? (
-            <p className="mt-4 text-center font-body text-[13px] text-[var(--color-text-tertiary)]">
-              No quotes yet. Generate one from a job or the Toolbox.
-            </p>
-          ) : (
-            <div className="mt-4 flex flex-col gap-2">
-              {sortedQuotes.map((q) => (
-                <MoneyRow key={q.id} record={q} type="quote" onOpen={() => onOpenRecord(q)} />
-              ))}
-            </div>
-          )}
-          <ConnectTheBooks showToast={showToast} />
-        </>
-      )}
+      <TabContent
+        tab={tab}
+        sortedInvoices={sortedInvoices}
+        sortedQuotes={sortedQuotes}
+        onOpenRecord={onOpenRecord}
+        showToast={showToast}
+      />
     </div>
   )
 }

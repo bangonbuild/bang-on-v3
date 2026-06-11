@@ -15,11 +15,12 @@ interface JobFormScreenProps {
     status: JobStatus
   }) => void
   onDelete?: () => void
+  embedded?: boolean
 }
 
 const statuses: JobStatus[] = ['active', 'on-hold', 'complete']
 
-export function JobFormScreen({ job, onBack, onSave, onDelete }: JobFormScreenProps) {
+export function JobFormScreen({ job, onBack, onSave, onDelete, embedded = false }: JobFormScreenProps) {
   const [name, setName] = useState(job?.name ?? '')
   const [client, setClient] = useState(job?.client ?? '')
   const [email, setEmail] = useState(job?.email ?? '')
@@ -56,14 +57,25 @@ export function JobFormScreen({ job, onBack, onSave, onDelete }: JobFormScreenPr
     'mt-1 w-full min-h-[48px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 font-body text-[var(--color-text-primary)]'
 
   return (
-    <div className={`px-4 pt-6 ${NAV_PB}`}>
-      <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="flex h-12 w-12 items-center justify-center">
-          <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
-        </button>
+    <div className={`px-4 pt-6 ${embedded ? 'pb-8' : NAV_PB}`}>
+      <header className={`flex items-center gap-3 ${embedded ? 'justify-between' : ''}`}>
+        {!embedded && (
+          <button type="button" onClick={onBack} className="flex h-12 w-12 items-center justify-center">
+            <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
+          </button>
+        )}
         <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">
           {job ? 'Edit job' : 'New job'}
         </h1>
+        {embedded && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="font-body text-sm text-[var(--color-text-secondary)]"
+          >
+            Cancel
+          </button>
+        )}
       </header>
 
       <div className="mt-6 flex flex-col gap-4">
