@@ -6,7 +6,7 @@ import { useLoading } from '../hooks/useLoading'
 import { ButtonSpinner } from './ButtonSpinner'
 import type { GeneratedDocument, Job, PhotoReportResult } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
-import { DRAWER_HEIGHT } from '../utils/layout'
+import { DRAWER_HEIGHT, DRAWER_SCROLL_PB } from '../utils/layout'
 
 interface ShareUpdateModalProps {
   job: Job | null
@@ -100,7 +100,7 @@ export function ShareUpdateModal({
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
+            <div className={`min-h-0 flex-1 overflow-y-auto px-5 ${DRAWER_SCROLL_PB}`}>
               <div>
                 <label className="font-body text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   To

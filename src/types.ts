@@ -29,10 +29,15 @@ export interface Job {
 }
 
 export interface ChatMessage {
+  id?: string
   role: 'user' | 'assistant'
   content: string
   timestamp: number
   imageUrl?: string
+  imageBase64?: string
+  imageMimeType?: string
+  isError?: boolean
+  streaming?: boolean
 }
 
 export interface Chat {

@@ -3,7 +3,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import { Toggle } from './Toggle'
 import type { ShowToastFn } from '../hooks/useToast'
-import { DRAWER_HEIGHT } from '../utils/layout'
+import { DRAWER_HEIGHT, DRAWER_SCROLL_PB } from '../utils/layout'
 
 interface SuggestToolDrawerProps {
   open: boolean
@@ -66,7 +66,7 @@ export function SuggestToolDrawer({ open, onClose, showToast }: SuggestToolDrawe
                 <X size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
+            <div className={`min-h-0 flex-1 overflow-y-auto px-5 ${DRAWER_SCROLL_PB}`}>
               <label className="font-body text-[13px] text-[var(--color-text-secondary)]">
                 Suggestion
                 <textarea

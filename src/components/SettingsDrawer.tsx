@@ -63,7 +63,7 @@ export function SettingsDrawer({
                   <X size={22} strokeWidth={1.5} className="text-[var(--color-text-secondary)]" />
                 </button>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-hidden">
                 <SettingsScreen
                   profile={profile}
                   setProfile={setProfile}
@@ -96,7 +96,7 @@ export function SettingsDrawer({
                   <X size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
                 </button>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-hidden">
                 <SettingsScreen
                   profile={profile}
                   setProfile={setProfile}

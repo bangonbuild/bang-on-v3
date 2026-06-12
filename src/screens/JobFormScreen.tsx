@@ -3,7 +3,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import { ButtonSpinner } from '../components/ButtonSpinner'
 import type { Job, JobStatus } from '../types'
-import { DRAWER_HEIGHT } from '../utils/layout'
+import { DRAWER_HEIGHT, DRAWER_SCROLL_PB } from '../utils/layout'
 
 interface JobFormScreenProps {
   job?: Job
@@ -223,7 +223,7 @@ export function JobFormScreen({
                   <X size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
                 </button>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className={`min-h-0 flex-1 overflow-y-auto ${DRAWER_SCROLL_PB}`}>
                 <JobFormFields
                   job={job}
                   onSave={onSave}

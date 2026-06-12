@@ -17,10 +17,10 @@ export function ChatBubble({ message }: ChatBubbleProps) {
             <img
               src={message.imageUrl}
               alt=""
-              className="mb-2 w-[120px] rounded-lg object-cover"
+              className="mb-2 w-full max-h-[200px] rounded-lg object-cover"
             />
           )}
-          {message.content && (
+          {message.content && !message.content.match(/^\[Image attached\]$/i) && (
             <p className="font-body text-[15px] leading-relaxed text-[var(--color-text-primary)]">
               {message.content}
             </p>

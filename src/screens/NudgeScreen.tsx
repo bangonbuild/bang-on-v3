@@ -1,4 +1,4 @@
-import { ArrowUp, Mic, Paperclip } from 'lucide-react'
+import { ArrowUp, Mic, Paperclip, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { nudgeMarkdownComponents } from '../utils/markdownComponents'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -10,7 +10,7 @@ import type { ChatMessage, Job, PendingChat, Profile } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
 import { buildJobContext } from '../utils/jobHelpers'
 import { NUDGE_INPUT_BOTTOM } from '../utils/layout'
-import { STORAGE_KEYS } from '../utils/storage'
+import { generateId, STORAGE_KEYS } from '../utils/storage'
 
 interface NudgeScreenProps {
   job?: Job
@@ -19,6 +19,12 @@ interface NudgeScreenProps {
   showToast: ShowToastFn
   embedded?: boolean
   onBack?: () => void
+}
+
+interface PendingImage {
+  objectUrl: string
+  base64: string
+  mimeType: string
 }
 
 function firstName(fullName: string): string {
@@ -40,8 +46,7 @@ export function NudgeScreen({
   const [loading, setLoading] = useState(false)
   const [streamingText, setStreamingText] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imageMime, setImageMime] = useState('image/jpeg')
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -52,22 +57,24 @@ export function NudgeScreen({
   const { track } = useLoading()
   const userName = profile.name?.split(' ')[0] || undefined
 
-  const historyForApi = useCallback(
-    (extraUser?: string) => {
-      const base = messagesRef.current.map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      }))
-      if (extraUser) base.push({ role: 'user' as const, content: extraUser })
-      return base
-    },
-    [],
-  )
+  const historyForApi = useCallback((extraUser?: string) => {
+    const base = messagesRef.current.map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }))
+    if (extraUser) base.push({ role: 'user' as const, content: extraUser })
+    return base
+  }, [])
+
+  const clearPendingImage = useCallback((image?: PendingImage | null) => {
+    if (image?.objectUrl) URL.revokeObjectURL(image.objectUrl)
+    setPendingImage(null)
+  }, [])
 
   const sendMessage = useCallback(
-    async (text: string, imageBase64?: string) => {
+    async (text: string, image?: PendingImage) => {
       const trimmed = text.trim()
-      if ((!trimmed && !imageBase64) || loading) return
+      if ((!trimmed && !image) || loading) return
 
       let messageToSend = trimmed
       if (snapContextRef.current) {
@@ -75,35 +82,40 @@ export function NudgeScreen({
         snapContextRef.current = null
       }
 
-      const previewUrl = imagePreview
-      const displayContent = trimmed
       const userMsg: ChatMessage = {
+        id: generateId(),
         role: 'user',
-        content: displayContent,
-        imageUrl: previewUrl ?? undefined,
+        content: trimmed,
         timestamp: Date.now(),
+        imageUrl: image?.objectUrl,
+        imageBase64: image?.base64,
+        imageMimeType: image?.mimeType,
       }
+
       setMessages((prev) => [...prev, userMsg])
       setInput('')
-      setImagePreview(null)
+      setPendingImage(null)
       setLoading(true)
       setStreamingText('')
       setError(null)
 
       try {
-        if (imageBase64) {
+        if (image?.base64) {
           const { analysis } = await track(
             analyseImage({
-              image: imageBase64,
-              mimeType: imageMime,
+              image: image.base64,
+              mimeType: image.mimeType,
               mode: 'identify',
               trade: profile.trade,
             }),
           )
-          const messageWithContext = `[Image context: ${analysis}]\n\nUser message: ${trimmed || 'What can you tell me about this image?'}`
+          const contentWithContext = analysis
+            ? `[Image analysis: ${analysis}]\n\n${trimmed || 'What can you tell me about this image?'}`
+            : trimmed || 'What can you tell me about this image?'
+
           const reply = await track(
             streamChatMessage({
-              messages: historyForApi(messageWithContext),
+              messages: historyForApi(contentWithContext),
               trade: profile.trade,
               jobContext: job ? buildJobContext(job) : undefined,
               userName,
@@ -113,7 +125,7 @@ export function NudgeScreen({
           setStreamingText('')
           setMessages((prev) => [
             ...prev,
-            { role: 'assistant', content: reply, timestamp: Date.now() },
+            { id: generateId(), role: 'assistant', content: reply, timestamp: Date.now() },
           ])
         } else {
           const reply = await track(
@@ -128,7 +140,7 @@ export function NudgeScreen({
           setStreamingText('')
           setMessages((prev) => [
             ...prev,
-            { role: 'assistant', content: reply, timestamp: Date.now() },
+            { id: generateId(), role: 'assistant', content: reply, timestamp: Date.now() },
           ])
         }
       } catch (err) {
@@ -140,7 +152,7 @@ export function NudgeScreen({
         setLoading(false)
       }
     },
-    [historyForApi, imageMime, job, loading, profile.trade, showToast, track, userName],
+    [clearPendingImage, historyForApi, job, loading, profile.trade, showToast, track, userName],
   )
 
   useEffect(() => {
@@ -178,17 +190,31 @@ export function NudgeScreen({
     }
   }, [job?.id, onSaveChat])
 
+  useEffect(() => {
+    return () => {
+      if (pendingImage?.objectUrl) URL.revokeObjectURL(pendingImage.objectUrl)
+    }
+  }, [pendingImage?.objectUrl])
+
   const handleImageSelect = (file: File | undefined) => {
     if (!file) return
-    setImageMime(file.type || 'image/jpeg')
+    if (pendingImage?.objectUrl) URL.revokeObjectURL(pendingImage.objectUrl)
+    const objectUrl = URL.createObjectURL(file)
     const reader = new FileReader()
-    reader.onload = () => setImagePreview(reader.result as string)
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl
+      setPendingImage({
+        objectUrl,
+        base64,
+        mimeType: file.type || 'image/jpeg',
+      })
+    }
     reader.readAsDataURL(file)
   }
 
   const handleSend = () => {
-    const base64 = imagePreview?.includes(',') ? imagePreview.split(',')[1] : undefined
-    void sendMessage(input, base64)
+    void sendMessage(input, pendingImage ?? undefined)
   }
 
   const name = firstName(profile.name)
@@ -218,8 +244,8 @@ export function NudgeScreen({
           </div>
         )}
         <div className="flex flex-col gap-4">
-          {messages.map((m, i) => (
-            <ChatBubble key={`${m.timestamp}-${i}`} message={m} />
+          {messages.map((m) => (
+            <ChatBubble key={m.id ?? m.timestamp} message={m} />
           ))}
           {(loading || streamingText) && (
             <div className="flex justify-start">
@@ -247,19 +273,21 @@ export function NudgeScreen({
         className="shrink-0 px-4 pt-2"
         style={{ paddingBottom: embedded ? NUDGE_INPUT_BOTTOM : 'calc(3.5rem + 12px)' }}
       >
-        {imagePreview && (
-          <div className="mb-2 flex items-start gap-2">
-            <div className="relative">
-              <img src={imagePreview} alt="" className="h-[60px] w-[60px] rounded-lg object-cover" />
-              <button
-                type="button"
-                onClick={() => setImagePreview(null)}
-                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-surface)] text-xs text-[var(--color-text-secondary)]"
-                aria-label="Remove image"
-              >
-                ×
-              </button>
-            </div>
+        {pendingImage && (
+          <div className="relative mb-2 inline-block">
+            <img
+              src={pendingImage.objectUrl}
+              alt=""
+              className="h-[60px] w-[60px] rounded-lg object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => clearPendingImage(pendingImage)}
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
+              aria-label="Remove image"
+            >
+              <X size={12} strokeWidth={2} />
+            </button>
           </div>
         )}
         <input
@@ -269,9 +297,7 @@ export function NudgeScreen({
           className="hidden"
           onChange={(e) => handleImageSelect(e.target.files?.[0])}
         />
-        <div
-          className="flex items-center gap-2 rounded-[24px] border border-[var(--color-border-2)] bg-[var(--color-surface-2)] px-4 py-3 shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
-        >
+        <div className="flex items-center gap-2 rounded-[24px] border border-[var(--color-border-2)] bg-[var(--color-surface-2)] px-4 py-3 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -298,7 +324,7 @@ export function NudgeScreen({
           </button>
           <button
             type="button"
-            disabled={(!input.trim() && !imagePreview) || loading}
+            disabled={(!input.trim() && !pendingImage) || loading}
             onClick={handleSend}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white disabled:opacity-30"
             aria-label="Send"

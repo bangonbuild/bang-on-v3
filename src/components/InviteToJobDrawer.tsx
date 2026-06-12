@@ -3,7 +3,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import type { Job, Teammate } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
-import { DRAWER_HEIGHT } from '../utils/layout'
+import { DRAWER_HEIGHT, DRAWER_SCROLL_PB } from '../utils/layout'
 import { loadJson, STORAGE_KEYS } from '../utils/storage'
 
 interface InviteToJobDrawerProps {
@@ -73,7 +73,7 @@ export function InviteToJobDrawer({
                 <X size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
+            <div className={`min-h-0 flex-1 overflow-y-auto px-5 ${DRAWER_SCROLL_PB}`}>
               <p className="font-body text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
                 Your team
               </p>

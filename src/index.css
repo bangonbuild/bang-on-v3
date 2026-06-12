@@ -105,18 +105,17 @@ body,
   display: none;
 }
 
-.tab-pills {
+.tab-pills,
+.filter-tabs {
   display: flex;
-  gap: 0;
-  padding: 4px;
-  border-radius: 8px;
-  background: var(--color-surface-2);
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.tab-pill {
-  flex: 1;
+.tab-pill,
+.filter-tab {
   min-height: 36px;
-  padding: 4px 12px;
+  padding: 8px 16px;
   border-radius: 999px;
   font-family: var(--font-body);
   font-size: 14px;
@@ -126,7 +125,8 @@ body,
   cursor: pointer;
 }
 
-.tab-pill-active {
+.tab-pill-active,
+.filter-tab-active {
   background: var(--color-text-primary);
   color: var(--color-bg);
 }

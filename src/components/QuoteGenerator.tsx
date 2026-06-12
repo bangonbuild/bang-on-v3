@@ -312,13 +312,13 @@ Keep it practical for a tradie. Australian English.`
       </h2>
 
       {!isTimelineView && (
-        <div className="tab-pills mt-4">
+        <div className="filter-tabs mt-4">
           {(['describe', 'build'] as const).map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => setInputMode(mode)}
-              className={`tab-pill capitalize ${inputMode === mode ? 'tab-pill-active' : ''}`}
+              className={`filter-tab capitalize ${inputMode === mode ? 'filter-tab-active' : ''}`}
             >
               {mode === 'describe' ? 'Describe it' : 'Build it'}
             </button>

@@ -186,7 +186,7 @@ export function JobDetailScreen({
   }
 
   const tabClass = (tab: JobTab) =>
-    `tab-pill ${activeTab === tab ? 'tab-pill-active' : ''}`
+    `filter-tab ${activeTab === tab ? 'filter-tab-active' : ''}`
 
   return (
     <div
@@ -313,24 +313,24 @@ export function JobDetailScreen({
           <button
             type="button"
             onClick={() => setInviteOpen(true)}
-            className="flex h-12 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]"
+            aria-label="Invite to job"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]"
           >
-            <UserPlus size={18} strokeWidth={1.5} />
-            Invite to job
+            <UserPlus size={20} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
           </button>
           <button
             type="button"
             onClick={onNudge}
-            className="flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]"
+            aria-label="Ask Nudge"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]"
           >
-            <MessageCircle size={18} strokeWidth={1.5} style={{ display: 'block' }} />
-            Ask Nudge
+            <MessageCircle size={20} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
           </button>
         </div>
       )}
 
       {!inPhotoFlow && (
-        <div className="tab-pills mt-4">
+        <div className="filter-tabs mt-4">
           <button type="button" onClick={() => setActiveTab('timeline')} className={tabClass('timeline')}>
             Timeline
           </button>

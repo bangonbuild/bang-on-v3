@@ -585,10 +585,10 @@ function AppMain() {
                 content: reportId,
               })
               showToast('Report saved.', 'success')
-              setOverlay({ type: 'job-detail', jobId: overlay.jobId })
+              goToJobDetail(overlay.jobId)
             } else {
               showToast('Report saved.', 'success')
-              setOverlay({ type: 'none' })
+              closeOverlay()
               setTab('toolbox')
             }
           }}

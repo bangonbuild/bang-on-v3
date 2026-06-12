@@ -13,6 +13,10 @@ export const DESKTOP_SIDEBAR_WIDTH = '240px'
 /** Bottom padding on desktop (no bottom nav) */
 export const DESKTOP_PB = 'pb-8'
 
+/** Padding for scrollable content inside bottom drawers (clears bottom nav) */
+export const DRAWER_SCROLL_PB =
+  'pb-[calc(var(--bottom-nav-height)+20px+env(safe-area-inset-bottom))]'
+
 /** Bottom offset for fixed elements above the nav */
 export const NAV_BOTTOM = 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))'
 

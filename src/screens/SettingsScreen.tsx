@@ -7,7 +7,7 @@ import { useDesktop } from '../hooks/useDesktop'
 import type { PaymentDetails, Profile, Teammate } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import type { ShowToastFn } from '../hooks/useToast'
-import { DESKTOP_PB, NAV_PB, BACK_BTN } from '../utils/layout'
+import { DESKTOP_PB, NAV_PB, BACK_BTN, DRAWER_SCROLL_PB } from '../utils/layout'
 import { generateId, loadJson, saveJson, STORAGE_KEYS } from '../utils/storage'
 
 const TRADES = [
@@ -111,20 +111,20 @@ export function SettingsScreen({
       </header>
       )}
 
-      <div className="tab-pills mt-4 shrink-0">
+      <div className="filter-tabs mt-4 shrink-0">
         {(['profile', 'team', 'app'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setSettingsTab(tab)}
-            className={`tab-pill capitalize ${settingsTab === tab ? 'tab-pill-active' : ''}`}
+            className={`filter-tab capitalize ${settingsTab === tab ? 'filter-tab-active' : ''}`}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      <div className={drawer ? 'min-h-0 flex-1 overflow-y-auto' : undefined}>
+      <div className={drawer ? `min-h-0 flex-1 overflow-y-auto ${DRAWER_SCROLL_PB}` : undefined}>
       {settingsTab === 'profile' && (
         <>
       <SectionHeader
@@ -426,7 +426,7 @@ export function SettingsScreen({
       >
         Support
       </button>
-      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.11</p>
+      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.12</p>
         </>
       )}
       </div>

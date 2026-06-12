@@ -136,6 +136,7 @@ Use bullet points for lists of items. Write in clear Australian English.`
     const photoData = photos.length > 0 ? photos.map((p) => p.base64) : report.photos.map((p) => p.imageUrl)
     const saved = onSaveReport(report, photoData)
     onSaveComplete(saved.id)
+    onClose()
   }
 
   const handleDelete = () => {
