@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ScreenTitle } from '../components/ScreenTitle'
 import type { Profile } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
-import { NAV_PB } from '../utils/layout'
+import { NAV_PB, BACK_BTN } from '../utils/layout'
 
 interface SupportScreenProps {
   profile: Profile
@@ -30,7 +30,7 @@ export function SupportScreen({ profile, onBack, showToast }: SupportScreenProps
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
+        <button type="button" onClick={onBack} className={BACK_BTN}>
           <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
         </button>
         <ScreenTitle>Contact support</ScreenTitle>

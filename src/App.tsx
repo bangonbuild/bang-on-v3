@@ -27,7 +27,7 @@ import { JobsScreen } from './screens/JobsScreen'
 import { MeasureScreen } from './screens/MeasureScreen'
 import { MoneyScreen } from './screens/MoneyScreen'
 import { SnapScreen } from './screens/SnapScreen'
-import { SuggestToolScreen } from './screens/SuggestToolScreen'
+import { SuggestToolDrawer } from './components/SuggestToolDrawer'
 import { SupportScreen } from './screens/SupportScreen'
 import { ToolboxScreen } from './screens/ToolboxScreen'
 import { PortalScreen } from './screens/PortalScreen'
@@ -91,6 +91,7 @@ function AppMain() {
     quotes,
     addFromDocument,
     updateFromDocument,
+    updateRecord,
     deleteRecord,
     markPaid,
     convertQuoteToInvoice,
@@ -192,6 +193,32 @@ function AppMain() {
     [addFromDocument, getJob],
   )
 
+  const handleShareDocument = useCallback(
+    (
+      doc: GeneratedDocument,
+      opts: { entryId?: string; moneyRecordId?: string; jobId?: string },
+    ) => {
+      const label = doc.type === 'quote' ? 'Quote' : 'Invoice'
+      if (opts.jobId) {
+        if (!opts.entryId) {
+          addTimelineEntry(opts.jobId, {
+            type: doc.type,
+            content: serializeDocument(doc),
+            amount: doc.total,
+          })
+        }
+        addTimelineEntry(opts.jobId, {
+          type: 'note',
+          content: `${label} shared with client`,
+        })
+      }
+      if (opts.moneyRecordId) {
+        updateRecord(opts.moneyRecordId, { status: 'sent' })
+      }
+    },
+    [addTimelineEntry, updateRecord],
+  )
+
   const openDocFromTimeline = (jobId: string, entry: TimelineEntry) => {
     const parsed = parseDocumentFromEntry(entry.content)
     if (parsed && (entry.type === 'quote' || entry.type === 'invoice')) {
@@ -210,7 +237,6 @@ function AppMain() {
     overlay.type === 'quote' ||
     overlay.type === 'photo-report' ||
     overlay.type === 'measure' ||
-    overlay.type === 'suggest-tool' ||
     overlay.type === 'support'
 
   const showMainContent =
@@ -218,7 +244,8 @@ function AppMain() {
     overlay.type === 'job-detail' ||
     overlay.type === 'settings' ||
     overlay.type === 'support' ||
-    overlay.type === 'job-form'
+    overlay.type === 'job-form' ||
+    overlay.type === 'suggest-tool'
 
   const renderTab = () => {
     switch (tab) {
@@ -272,6 +299,16 @@ function AppMain() {
                     onUpdateEntry: (jobId, entryId, updates) =>
                       updateTimelineEntry(jobId, entryId, updates),
                     onOpenDoc: (jobId, entry) => openDocFromTimeline(jobId, entry),
+                    onOpenPhotoReport: (jobId, reportId) =>
+                      setOverlay({ type: 'photo-report', jobId, reportId }),
+                    onAddCrew: (jobId, name, phone) => {
+                      const job = getJob(jobId)
+                      if (!job) return
+                      const crew = job.crew ?? []
+                      if (!crew.some((c) => c.phone === phone)) {
+                        updateJob(jobId, { crew: [...crew, { name, phone }] })
+                      }
+                    },
                     onSaveJob: (data, existingId) => {
                       if (existingId) {
                         updateJob(existingId, data)
@@ -384,6 +421,15 @@ function AppMain() {
             updateTimelineEntry(job.id, entryId, updates)
           }
           onOpenDoc={(entry) => openDocFromTimeline(job.id, entry)}
+          onOpenPhotoReport={(reportId) =>
+            setOverlay({ type: 'photo-report', jobId: job.id, reportId })
+          }
+          onAddCrew={(name, phone) => {
+            const crew = job.crew ?? []
+            if (!crew.some((c) => c.phone === phone)) {
+              updateJob(job.id, { crew: [...crew, { name, phone }] })
+            }
+          }}
           showToast={showToast}
           initialTab={jobDetailTab}
         />
@@ -511,6 +557,7 @@ function AppMain() {
                 }
               : undefined
           }
+          onShareDocument={handleShareDocument}
         />
       )
     }
@@ -566,19 +613,7 @@ function AppMain() {
       )
     }
     if (overlay.type === 'suggest-tool') {
-      return (
-        <SuggestToolScreen
-          onBack={() => {
-            setTab('toolbox')
-            closeOverlay()
-          }}
-          onSubmit={() => {
-            showToast("Thanks — we'll add it to the backlog.", 'success')
-            setTab('toolbox')
-            closeOverlay()
-          }}
-        />
-      )
+      return null
     }
     return null
   }
@@ -730,6 +765,14 @@ function AppMain() {
           }
         />
       )}
+      <SuggestToolDrawer
+        open={overlay.type === 'suggest-tool'}
+        onClose={() => {
+          setTab('toolbox')
+          closeOverlay()
+        }}
+        showToast={showToast}
+      />
     </div>
   )
 }

@@ -9,7 +9,7 @@ import type { GeneratedDocument, Job, MoneyRecord, PaymentDetails, Profile, Quot
 import { moneyRecordToDoc } from '../utils/moneyHelpers'
 import { parseQuoteFromAi } from '../utils/documentParser'
 import { buildJobContext } from '../utils/jobHelpers'
-import { NAV_PB } from '../utils/layout'
+import { BACK_BTN, NAV_PB } from '../utils/layout'
 import { formatDate } from '../utils/storage'
 import type { ShowToastFn } from '../hooks/useToast'
 
@@ -33,6 +33,10 @@ interface QuoteGeneratorProps {
   onDeleteMoney?: (id: string) => void
   onMarkPaid?: (id: string) => void
   onConvertToInvoice?: (id: string) => void
+  onShareDocument?: (
+    doc: GeneratedDocument,
+    opts: { entryId?: string; moneyRecordId?: string; jobId?: string },
+  ) => void
 }
 
 const emptyLine = (): QuoteLineItem => ({
@@ -63,6 +67,7 @@ export function QuoteGenerator({
   onDeleteMoney,
   onMarkPaid,
   onConvertToInvoice,
+  onShareDocument,
 }: QuoteGeneratorProps) {
   const [moneyEdit, setMoneyEdit] = useState(false)
   const [timelineEditMode, setTimelineEditMode] = useState(false)
@@ -279,9 +284,19 @@ Keep it practical for a tradie. Australian English.`
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         prefillMessage={sharePrefill}
-        includeDocDefault
-        docEntryId={editEntryId}
+        notificationType={doc?.type}
+        document={doc ?? undefined}
         showToast={showToast}
+        onShareSuccess={
+          job && doc
+            ? () =>
+                onShareDocument?.(doc, {
+                  entryId: editEntryId,
+                  moneyRecordId: moneyRecord?.id,
+                  jobId: job.id,
+                })
+            : undefined
+        }
       />
       </>
     )
@@ -289,7 +304,7 @@ Keep it practical for a tradie. Australian English.`
 
   return (
     <div className={`fixed inset-0 z-[85] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-4 pt-6 ${NAV_PB}`}>
-      <button type="button" onClick={onClose} className="flex h-12 w-12 items-center justify-center self-start">
+      <button type="button" onClick={onClose} className={`${BACK_BTN} self-start`}>
         <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
       </button>
       <h2 className="font-display mt-4 text-xl font-bold text-[var(--color-text-primary)]">
@@ -297,17 +312,13 @@ Keep it practical for a tradie. Australian English.`
       </h2>
 
       {!isTimelineView && (
-        <div className="mt-4 flex rounded bg-[var(--color-surface-2)] p-1">
+        <div className="tab-pills mt-4">
           {(['describe', 'build'] as const).map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => setInputMode(mode)}
-              className={`min-h-[36px] flex-1 rounded font-body text-sm capitalize ${
-                inputMode === mode
-                  ? 'chip-active'
-                  : 'text-[var(--color-text-secondary)]'
-              }`}
+              className={`tab-pill capitalize ${inputMode === mode ? 'tab-pill-active' : ''}`}
             >
               {mode === 'describe' ? 'Describe it' : 'Build it'}
             </button>

@@ -1,10 +1,12 @@
-import type { Job } from '../types'
+import type { GeneratedDocument, PhotoReportResult } from '../types'
 
 export interface NotifyPayload {
-  job: Job
+  job: { id: string; name: string; client?: string }
   message: string
   clientEmail: string
   clientName?: string
+  notificationType?: 'quote' | 'invoice' | 'photo-report'
+  document?: GeneratedDocument | PhotoReportResult | Record<string, unknown>
 }
 
 export async function sendClientUpdate(payload: NotifyPayload): Promise<{ portalUrl: string }> {

@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import { ButtonSpinner } from '../components/ButtonSpinner'
 import type { Job, JobStatus } from '../types'
+import { DRAWER_HEIGHT } from '../utils/layout'
 
 interface JobFormScreenProps {
   job?: Job
@@ -209,7 +210,7 @@ export function JobFormScreen({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ duration: 0.35, type: 'spring', bounce: 0.15 }}
-              className="fixed bottom-0 left-0 right-0 z-[81] flex max-h-[90vh] flex-col overflow-hidden rounded-t-[20px] bg-[var(--color-surface)]"
+              className={`fixed bottom-0 left-0 right-0 z-[81] flex ${DRAWER_HEIGHT} flex-col overflow-hidden rounded-t-[20px] bg-[var(--color-surface)]`}
             >
               <div className="flex shrink-0 justify-center pt-3">
                 <div className="h-1 w-10 rounded-full bg-[var(--color-border-2)]" />

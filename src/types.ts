@@ -23,6 +23,7 @@ export interface Job {
   status: JobStatus
   attention?: string
   timeline: TimelineEntry[]
+  crew?: { name: string; phone: string }[]
   createdAt: number
   updatedAt: number
 }
@@ -31,6 +32,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   timestamp: number
+  imageUrl?: string
 }
 
 export interface Chat {

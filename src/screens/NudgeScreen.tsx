@@ -75,8 +75,14 @@ export function NudgeScreen({
         snapContextRef.current = null
       }
 
-      const displayContent = trimmed || (imageBase64 ? '[Image attached]' : '')
-      const userMsg: ChatMessage = { role: 'user', content: displayContent, timestamp: Date.now() }
+      const previewUrl = imagePreview
+      const displayContent = trimmed
+      const userMsg: ChatMessage = {
+        role: 'user',
+        content: displayContent,
+        imageUrl: previewUrl ?? undefined,
+        timestamp: Date.now(),
+      }
       setMessages((prev) => [...prev, userMsg])
       setInput('')
       setImagePreview(null)
@@ -94,9 +100,20 @@ export function NudgeScreen({
               trade: profile.trade,
             }),
           )
+          const messageWithContext = `[Image context: ${analysis}]\n\nUser message: ${trimmed || 'What can you tell me about this image?'}`
+          const reply = await track(
+            streamChatMessage({
+              messages: historyForApi(messageWithContext),
+              trade: profile.trade,
+              jobContext: job ? buildJobContext(job) : undefined,
+              userName,
+              onToken: (token) => setStreamingText((prev) => prev + token),
+            }),
+          )
+          setStreamingText('')
           setMessages((prev) => [
             ...prev,
-            { role: 'assistant', content: analysis, timestamp: Date.now() },
+            { role: 'assistant', content: reply, timestamp: Date.now() },
           ])
         } else {
           const reply = await track(
@@ -191,8 +208,10 @@ export function NudgeScreen({
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         {messages.length === 0 && !loading && !streamingText && (
           <div className="flex min-h-[30vh] flex-col items-center justify-center text-center">
-            <div className="pulse-dot mb-4" />
-            <p className="font-display text-xl text-[var(--color-text-primary)]">datum.ai</p>
+            <div className="mb-4 flex items-center gap-2">
+              <div className="pulse-dot" />
+              <p className="font-display text-[20px] font-bold text-[var(--color-text-primary)]">Nudge</p>
+            </div>
             <p className="mt-2 font-body text-[15px] text-[var(--color-text-secondary)]">
               {welcomeLine} How can I help?
             </p>
@@ -229,15 +248,18 @@ export function NudgeScreen({
         style={{ paddingBottom: embedded ? NUDGE_INPUT_BOTTOM : 'calc(3.5rem + 12px)' }}
       >
         {imagePreview && (
-          <div className="mb-2 flex items-center gap-2">
-            <img src={imagePreview} alt="" className="h-12 w-12 rounded-lg object-cover" />
-            <button
-              type="button"
-              onClick={() => setImagePreview(null)}
-              className="font-body text-xs text-[var(--color-text-tertiary)]"
-            >
-              Remove
-            </button>
+          <div className="mb-2 flex items-start gap-2">
+            <div className="relative">
+              <img src={imagePreview} alt="" className="h-[60px] w-[60px] rounded-lg object-cover" />
+              <button
+                type="button"
+                onClick={() => setImagePreview(null)}
+                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-surface)] text-xs text-[var(--color-text-secondary)]"
+                aria-label="Remove image"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
         <input

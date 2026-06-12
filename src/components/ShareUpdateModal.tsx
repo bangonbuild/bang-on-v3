@@ -4,55 +4,20 @@ import { useEffect, useState } from 'react'
 import { sendClientUpdate } from '../services/notifyService'
 import { useLoading } from '../hooks/useLoading'
 import { ButtonSpinner } from './ButtonSpinner'
-import type { Job } from '../types'
+import type { GeneratedDocument, Job, PhotoReportResult } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
+import { DRAWER_HEIGHT } from '../utils/layout'
 
 interface ShareUpdateModalProps {
   job: Job | null
   isOpen: boolean
   onClose: () => void
   prefillMessage?: string
-  includeDocDefault?: boolean
-  docEntryId?: string
+  notificationType?: 'quote' | 'invoice' | 'photo-report'
+  document?: GeneratedDocument | PhotoReportResult
   showToast: ShowToastFn
   onEditJob?: () => void
-}
-
-function buildJobSnapshot(
-  job: Job,
-  options: {
-    includePhotos: boolean
-    includeDoc: boolean
-    docEntryId?: string
-  },
-): Job {
-  const visible = job.timeline.filter((e) => e.clientVisible === true)
-  const ids = new Set(visible.map((e) => e.id))
-  const timeline = [...visible]
-
-  if (options.includePhotos) {
-    const photos = job.timeline
-      .filter((e) => e.type === 'photo')
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 3)
-    for (const photo of photos) {
-      if (!ids.has(photo.id)) {
-        timeline.push({ ...photo, clientVisible: true })
-        ids.add(photo.id)
-      }
-    }
-  }
-
-  if (options.includeDoc && options.docEntryId) {
-    const entry = job.timeline.find((e) => e.id === options.docEntryId)
-    if (entry && !ids.has(entry.id)) {
-      timeline.push({ ...entry, clientVisible: true })
-    }
-  }
-
-  timeline.sort((a, b) => b.timestamp - a.timestamp)
-
-  return { ...job, timeline }
+  onShareSuccess?: () => void
 }
 
 export function ShareUpdateModal({
@@ -60,16 +25,14 @@ export function ShareUpdateModal({
   isOpen,
   onClose,
   prefillMessage = '',
-  includeDocDefault = false,
-  docEntryId,
+  notificationType,
+  document,
   showToast,
   onEditJob,
+  onShareSuccess,
 }: ShareUpdateModalProps) {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
-  const [includeStatus, setIncludeStatus] = useState(true)
-  const [includePhotos, setIncludePhotos] = useState(true)
-  const [includeDoc, setIncludeDoc] = useState(includeDocDefault)
   const [sending, setSending] = useState(false)
   const { track } = useLoading()
 
@@ -77,44 +40,29 @@ export function ShareUpdateModal({
     if (!isOpen) return
     setEmail(job?.email ?? '')
     setMessage(prefillMessage)
-    setIncludeStatus(true)
-    setIncludePhotos(true)
-    setIncludeDoc(includeDocDefault)
-  }, [isOpen, job?.email, prefillMessage, includeDocDefault])
+  }, [isOpen, job?.email, prefillMessage])
 
   const noEmailOnJob = Boolean(job && !job.email?.trim())
-  const canSend = email.trim().length > 0 && message.trim().length > 0 && !sending
+  const canSend = email.trim().length > 0 && message.trim().length > 0 && !sending && Boolean(job)
 
   const handleSend = async () => {
-    if (!canSend) return
-
-    const snapshotJob: Job = job
-      ? buildJobSnapshot(job, { includePhotos, includeDoc, docEntryId })
-      : {
-          id: `portal-${Date.now()}`,
-          name: 'Job update',
-          client: '',
-          email: email.trim(),
-          phone: '',
-          address: '',
-          status: includeStatus ? 'active' : 'active',
-          timeline: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }
+    if (!canSend || !job) return
 
     setSending(true)
     try {
       await track(
         sendClientUpdate({
-          job: snapshotJob,
+          job: { id: job.id, name: job.name, client: job.client },
           message: message.trim(),
           clientEmail: email.trim(),
-          clientName: job?.client,
+          clientName: job.client,
+          notificationType,
+          document,
         }),
       )
+      onShareSuccess?.()
       onClose()
-      showToast(`Update sent to ${job?.client || 'client'}.`, 'success')
+      showToast(`Update sent to ${job.client || 'client'}.`, 'success')
     } catch {
       showToast('Failed to send. Check your connection.', 'error')
     } finally {
@@ -138,9 +86,12 @@ export function ShareUpdateModal({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-[101] max-h-[90vh] overflow-y-auto rounded-t-2xl bg-[var(--color-surface)] p-6"
+            className={`fixed bottom-0 left-0 right-0 z-[101] flex ${DRAWER_HEIGHT} flex-col overflow-hidden rounded-t-[20px] bg-[var(--color-surface)]`}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex shrink-0 justify-center pt-3">
+              <div className="h-1 w-10 rounded-full bg-[var(--color-border-2)]" />
+            </div>
+            <div className="flex shrink-0 items-start justify-between px-5 pb-2 pt-1">
               <h2 className="font-display text-[20px] font-bold text-[var(--color-text-primary)]">
                 Send update to client
               </h2>
@@ -149,7 +100,7 @@ export function ShareUpdateModal({
               </button>
             </div>
 
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
               <div>
                 <label className="font-body text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   To
@@ -173,7 +124,7 @@ export function ShareUpdateModal({
                 )}
               </div>
 
-              <div>
+              <div className="mt-4">
                 <label className="font-body text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   Message
                 </label>
@@ -186,48 +137,11 @@ export function ShareUpdateModal({
                 />
               </div>
 
-              <div>
-                <p className="font-body text-xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  Include in update
-                </p>
-                <div className="mt-2 flex flex-col gap-2">
-                  <label className="flex items-center gap-3 font-body text-sm text-[var(--color-text-primary)]">
-                    <input
-                      type="checkbox"
-                      checked={includeStatus}
-                      onChange={(e) => setIncludeStatus(e.target.checked)}
-                      className="h-4 w-4 rounded"
-                    />
-                    Latest job status
-                  </label>
-                  <label className="flex items-center gap-3 font-body text-sm text-[var(--color-text-primary)]">
-                    <input
-                      type="checkbox"
-                      checked={includePhotos}
-                      onChange={(e) => setIncludePhotos(e.target.checked)}
-                      className="h-4 w-4 rounded"
-                    />
-                    Recent photos (last 3)
-                  </label>
-                  {includeDocDefault && (
-                    <label className="flex items-center gap-3 font-body text-sm text-[var(--color-text-primary)]">
-                      <input
-                        type="checkbox"
-                        checked={includeDoc}
-                        onChange={(e) => setIncludeDoc(e.target.checked)}
-                        className="h-4 w-4 rounded"
-                      />
-                      Quote/Invoice
-                    </label>
-                  )}
-                </div>
-              </div>
-
               <button
                 type="button"
                 onClick={() => void handleSend()}
                 disabled={!canSend}
-                className="mt-2 flex h-12 w-full items-center justify-center rounded-full bg-[#14120a] font-body text-[15px] font-semibold text-white disabled:opacity-50"
+                className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#14120a] font-body text-[15px] font-semibold text-white disabled:opacity-50"
               >
                 {sending ? <ButtonSpinner /> : 'Send update →'}
               </button>

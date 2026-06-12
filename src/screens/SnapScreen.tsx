@@ -5,7 +5,7 @@ import { analyseImage, mapFetchError } from '../services/aiService'
 import { useLoading } from '../hooks/useLoading'
 import type { Profile, SnapMode } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
-import { NAV_PB } from '../utils/layout'
+import { NAV_PB, BACK_BTN } from '../utils/layout'
 import { encodeImage, saveJson, STORAGE_KEYS } from '../utils/storage'
 
 type SnapStep = 'capture' | 'preview' | 'loading' | 'results'
@@ -139,7 +139,7 @@ export function SnapScreen({
   return (
     <div className={`flex h-full flex-col overflow-y-auto px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
+        <button type="button" onClick={onBack} className={BACK_BTN}>
           <Icon icon={ArrowLeft} size={22} />
         </button>
         <h1 className="font-display text-base text-[var(--color-text-primary)]">{modeLabels[mode]}</h1>

@@ -73,6 +73,16 @@ export function QuoteOverlay({
     'w-full rounded border border-black/15 bg-white px-2 py-1 font-body text-sm text-black'
 
   const renderViewButtons = () => {
+    const deleteBtn = onDelete ? (
+      <button
+        type="button"
+        onClick={onDelete}
+        className={`${surfaceBtn} flex-1 text-[var(--color-danger)]`}
+      >
+        Delete
+      </button>
+    ) : null
+
     if (doc.type === 'invoice') {
       return (
         <div className="flex flex-col gap-2">
@@ -82,34 +92,20 @@ export function QuoteOverlay({
             </button>
           )}
           <div className={rowClass}>
-            {onMarkPaid && (
-              <button
-                type="button"
-                onClick={onMarkPaid}
-                className={`${btnBase} flex-1`}
-                style={{ background: 'rgba(52,199,89,0.15)', color: '#34C759' }}
-              >
-                Mark as paid
-              </button>
-            )}
-            <button type="button" onClick={onShare} className={`${surfaceBtn} flex-1`}>
-              Share with client
-            </button>
-          </div>
-          <div className={rowClass}>
             <button type="button" onClick={onDownload} className={`${surfaceBtn} flex-1`}>
               Download
             </button>
-            {onDelete && (
-              <button
-                type="button"
-                onClick={onDelete}
-                className={`${btnBase} flex-1`}
-                style={{ background: 'rgba(255,59,48,0.15)', color: '#FF3B30' }}
-              >
-                Delete
+            {onMarkPaid && (
+              <button type="button" onClick={onMarkPaid} className={`${surfaceBtn} flex-1`}>
+                Mark as paid
               </button>
             )}
+          </div>
+          <div className={rowClass}>
+            <button type="button" onClick={onShare} className={`${surfaceBtn} flex-1`}>
+              Share with client
+            </button>
+            {deleteBtn}
           </div>
         </div>
       )
@@ -122,25 +118,21 @@ export function QuoteOverlay({
             Edit
           </button>
         )}
-        <button type="button" onClick={onShare} className={`${surfaceBtn} w-full`}>
-          Share with client
-        </button>
+        <div className={rowClass}>
+          <button type="button" onClick={onDownload} className={`${surfaceBtn} flex-1`}>
+            Download
+          </button>
+          <button type="button" onClick={onShare} className={`${surfaceBtn} flex-1`}>
+            Share with client
+          </button>
+        </div>
         <div className={rowClass}>
           {onConvertToInvoice && (
             <button type="button" onClick={onConvertToInvoice} className={`${surfaceBtn} flex-1`}>
               Convert to invoice
             </button>
           )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className={`${btnBase} flex-1`}
-              style={{ background: 'rgba(255,59,48,0.15)', color: '#FF3B30' }}
-            >
-              Delete
-            </button>
-          )}
+          {deleteBtn}
         </div>
       </div>
     )

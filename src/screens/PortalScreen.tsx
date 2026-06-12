@@ -1,85 +1,54 @@
-import {
-  FileText,
-  ImageIcon,
-  Loader2,
-  ReceiptText,
-  StickyNote,
-} from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { Job, JobStatus, TimelineEntry } from '../types'
-import { formatDate, formatRelativeTime } from '../utils/storage'
+import type { GeneratedDocument, PhotoReportResult } from '../types'
+import { formatDate } from '../utils/storage'
 
 interface PortalData {
-  job: Job
+  type: 'quote' | 'invoice' | 'photo-report'
+  document: GeneratedDocument | PhotoReportResult | null
+  jobName: string
   message: string
   sentAt: number
 }
 
-const statusStyles: Record<JobStatus, { bg: string; text: string; label: string }> = {
-  active: { bg: 'rgba(52,199,89,0.15)', text: '#34C759', label: 'Active' },
-  'on-hold': { bg: 'rgba(255,149,0,0.15)', text: '#FF9500', label: 'On hold' },
-  complete: { bg: '#f0f0f0', text: '#666666', label: 'Complete' },
-}
-
-function PortalStatusBadge({ status }: { status: JobStatus }) {
-  const s = statusStyles[status]
+function QuoteDocView({ doc }: { doc: GeneratedDocument }) {
+  const title = doc.type === 'quote' ? 'Quote' : 'Invoice'
   return (
-    <span
-      className="inline-block rounded-full px-3 py-1 text-xs font-medium capitalize"
-      style={{ background: s.bg, color: s.text }}
-    >
-      {s.label}
-    </span>
+    <div>
+      <h1 className="text-[20px] font-bold text-black">{title}</h1>
+      <p className="mt-2 text-sm text-black">#{doc.number} · {doc.date}</p>
+      {doc.clientName && <p className="mt-4 text-sm text-black">Client: {doc.clientName}</p>}
+      <div className="mt-6 space-y-2">
+        {doc.lineItems.map((item, i) => (
+          <div key={i} className="flex justify-between border-b border-[#eee] py-2 text-sm text-black">
+            <span>{item.description}</span>
+            <span>${item.total.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 space-y-1 text-right text-sm text-black">
+        <p>Subtotal: ${doc.subtotal.toFixed(2)}</p>
+        {doc.includeGst && <p>GST: ${doc.gst.toFixed(2)}</p>}
+        <p className="text-lg font-bold">Total: ${doc.total.toFixed(2)}</p>
+      </div>
+    </div>
   )
 }
 
-function PortalTimelineEntry({ entry }: { entry: TimelineEntry }) {
-  const iconClass = 'text-[#666666]'
-
-  if (entry.type === 'photo' && entry.imageUrl) {
-    return (
-      <div className="rounded-xl border border-[#EEEEEE] p-4">
-        <ImageIcon size={18} strokeWidth={1.5} className={iconClass} />
-        <img src={entry.imageUrl} alt="" className="mt-3 w-full rounded-lg object-cover" />
-        {entry.content && <p className="mt-2 text-[15px] text-[#111111]">{entry.content}</p>}
-        <p className="mt-1 text-xs text-[#666666]">{formatRelativeTime(entry.timestamp)}</p>
-      </div>
-    )
-  }
-
-  if (entry.type === 'quote' || entry.type === 'invoice') {
-    return (
-      <div className="flex items-start gap-3 rounded-xl border border-[#EEEEEE] p-4">
-        {entry.type === 'quote' ? (
-          <ReceiptText size={18} strokeWidth={1.5} className={iconClass} />
-        ) : (
-          <FileText size={18} strokeWidth={1.5} className={iconClass} />
-        )}
-        <div>
-          <p className="capitalize text-[#111111]">
-            {entry.type} — ${entry.amount?.toLocaleString() ?? '0'}
-          </p>
-          <p className="mt-1 text-xs text-[#666666]">{formatRelativeTime(entry.timestamp)}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (entry.type === 'photo-report') {
-    return (
-      <div className="rounded-xl border border-[#EEEEEE] p-4">
-        <ImageIcon size={18} strokeWidth={1.5} className={iconClass} />
-        <p className="mt-2 text-[15px] text-[#111111]">Photo report</p>
-        <p className="mt-1 text-xs text-[#666666]">{formatRelativeTime(entry.timestamp)}</p>
-      </div>
-    )
-  }
-
+function PhotoReportView({ report }: { report: PhotoReportResult }) {
   return (
-    <div className="rounded-xl border border-[#EEEEEE] p-4">
-      <StickyNote size={18} strokeWidth={1.5} className={iconClass} />
-      <p className="mt-2 text-[15px] leading-relaxed text-[#333333]">{entry.content}</p>
-      <p className="mt-1 text-xs text-[#666666]">{formatRelativeTime(entry.timestamp)}</p>
+    <div>
+      <h1 className="text-[20px] font-bold text-black">{report.title}</h1>
+      <p className="mt-2 text-sm text-black">{report.date}</p>
+      <div className="mt-6 flex flex-col gap-4">
+        {report.photos.map((p, i) => (
+          <div key={i}>
+            <img src={p.imageUrl} alt="" className="w-full rounded-lg object-cover" />
+            {p.caption && <p className="mt-2 text-sm text-black">{p.caption}</p>}
+          </div>
+        ))}
+      </div>
+      <p className="mt-6 whitespace-pre-wrap text-[15px] leading-relaxed text-black">{report.summary}</p>
     </div>
   )
 }
@@ -112,12 +81,12 @@ export function PortalScreen() {
       })
   }, [])
 
-  const visibleTimeline = data?.job.timeline.filter((e) => e.clientVisible === true) ?? []
+  const doc = data?.document as GeneratedDocument | PhotoReportResult | null
 
   return (
-    <div className="min-h-screen bg-white text-[#111111]">
+    <div className="min-h-screen bg-white text-black">
       <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="font-display text-[18px] font-bold text-[#14120a]">datum.ai</p>
+        <p className="font-display text-[18px] font-bold text-black">datum.ai</p>
 
         {loading && (
           <div className="mt-24 flex flex-col items-center gap-4">
@@ -127,7 +96,7 @@ export function PortalScreen() {
 
         {error && !loading && (
           <div className="mt-12">
-            <p className="mt-4 text-[16px] leading-relaxed text-[#333333]">
+            <p className="text-[16px] leading-relaxed text-black">
               This link has expired or is no longer available.
             </p>
             <p className="mt-2 text-[15px] text-[#666666]">Contact your tradie for a new update.</p>
@@ -136,24 +105,21 @@ export function PortalScreen() {
 
         {data && !loading && (
           <>
-            <h1 className="mt-8 text-[24px] font-semibold text-[#111111]">{data.job.name}</h1>
-            <div className="mt-3">
-              <PortalStatusBadge status={data.job.status} />
-            </div>
+            <h1 className="mt-8 text-[24px] font-semibold text-black">{data.jobName}</h1>
             <p className="mt-2 text-[13px] text-[#666666]">Sent: {formatDate(data.sentAt)}</p>
 
             <hr className="my-6 border-[#EEEEEE]" />
 
-            <p className="text-[16px] leading-[28px] text-[#333333]">{data.message}</p>
+            <p className="text-[16px] leading-[28px] text-black">{data.message}</p>
 
-            {visibleTimeline.length > 0 && (
+            {doc && (
               <>
                 <hr className="my-6 border-[#EEEEEE]" />
-                <div className="flex flex-col gap-3">
-                  {visibleTimeline.map((entry) => (
-                    <PortalTimelineEntry key={entry.id} entry={entry} />
-                  ))}
-                </div>
+                {data.type === 'photo-report' ? (
+                  <PhotoReportView report={doc as PhotoReportResult} />
+                ) : (
+                  <QuoteDocView doc={doc as GeneratedDocument} />
+                )}
               </>
             )}
 

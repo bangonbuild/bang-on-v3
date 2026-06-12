@@ -7,7 +7,7 @@ import { useDesktop } from '../hooks/useDesktop'
 import type { PaymentDetails, Profile, Teammate } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import type { ShowToastFn } from '../hooks/useToast'
-import { DESKTOP_PB, NAV_PB } from '../utils/layout'
+import { DESKTOP_PB, NAV_PB, BACK_BTN } from '../utils/layout'
 import { generateId, loadJson, saveJson, STORAGE_KEYS } from '../utils/storage'
 
 const TRADES = [
@@ -97,11 +97,13 @@ export function SettingsScreen({
   }
 
   return (
-    <div className={`${drawer ? 'px-5 pb-8' : isDesktop ? 'px-10 pt-8' : 'px-4 pt-6'} ${drawer ? '' : isDesktop ? DESKTOP_PB : NAV_PB}`}>
+    <div
+      className={`${drawer ? 'flex h-full min-h-0 flex-col px-5 pb-8' : isDesktop ? 'px-10 pt-8' : 'px-4 pt-6'} ${drawer ? '' : isDesktop ? DESKTOP_PB : NAV_PB}`}
+    >
       {!drawer && (
       <header className={`flex items-center gap-3 ${isDesktop ? 'mb-0' : ''}`}>
         {!isDesktop && (
-          <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px] shrink-0">
+          <button type="button" onClick={onBack} className={BACK_BTN}>
             <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
           </button>
         )}
@@ -109,21 +111,20 @@ export function SettingsScreen({
       </header>
       )}
 
-      <div className="mt-4 flex gap-2">
+      <div className="tab-pills mt-4 shrink-0">
         {(['profile', 'team', 'app'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setSettingsTab(tab)}
-            className={`min-h-[36px] flex-1 rounded-full px-3 font-body text-sm capitalize ${
-              settingsTab === tab ? 'chip-active' : 'chip-inactive'
-            }`}
+            className={`tab-pill capitalize ${settingsTab === tab ? 'tab-pill-active' : ''}`}
           >
             {tab}
           </button>
         ))}
       </div>
 
+      <div className={drawer ? 'min-h-0 flex-1 overflow-y-auto' : undefined}>
       {settingsTab === 'profile' && (
         <>
       <SectionHeader
@@ -425,9 +426,10 @@ export function SettingsScreen({
       >
         Support
       </button>
-      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.10</p>
+      <p className="mt-4 font-body text-[13px] text-[var(--color-text-tertiary)]">datum.ai v0.3.11</p>
         </>
       )}
+      </div>
     </div>
   )
 }

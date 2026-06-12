@@ -26,6 +26,8 @@ export interface JobsDesktopHandlers {
   onAddPhoto: (jobId: string, content: string, imageUrl: string) => void
   onUpdateEntry: (jobId: string, entryId: string, updates: Partial<TimelineEntry>) => void
   onOpenDoc: (jobId: string, entry: TimelineEntry) => void
+  onOpenPhotoReport: (jobId: string, reportId: string) => void
+  onAddCrew: (jobId: string, name: string, phone: string) => void
   onSaveJob: (
     data: {
       name: string
@@ -269,6 +271,8 @@ export function JobsScreen({
                 h.onUpdateEntry(selectedJob.id, entryId, updates)
               }
               onOpenDoc={(entry) => h.onOpenDoc(selectedJob.id, entry)}
+              onOpenPhotoReport={(reportId) => h.onOpenPhotoReport(selectedJob.id, reportId)}
+              onAddCrew={(name, phone) => h.onAddCrew(selectedJob.id, name, phone)}
               showToast={h.showToast}
               initialTab={h.initialDetailTab}
             />

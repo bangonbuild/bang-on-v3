@@ -1,27 +1,27 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
-  Eye,
-  EyeOff,
   FileText,
   ImageIcon,
   MapPin,
   MessageCircle,
   ReceiptText,
   StickyNote,
+  UserPlus,
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { ButtonSpinner } from '../components/ButtonSpinner'
 import { JobActionDrawer, type JobAction } from '../components/JobActionDrawer'
+import { InviteToJobDrawer } from '../components/InviteToJobDrawer'
 import { sortInvoices } from '../utils/invoiceSort'
 import { StatusBadge } from '../components/StatusBadge'
 import { streamChatMessage } from '../services/aiService'
 import { useLoading } from '../hooks/useLoading'
 import type { Job, MoneyRecord, Profile, TimelineEntry } from '../types'
 import type { ShowToastFn } from '../hooks/useToast'
-import { NAV_PB } from '../utils/layout'
+import { NAV_PB, BACK_BTN } from '../utils/layout'
 import { formatDate, formatRelativeTime } from '../utils/storage'
 import { nudgeMarkdownComponents } from '../utils/markdownComponents'
 
@@ -44,6 +44,8 @@ interface JobDetailScreenProps {
   onAddPhoto: (content: string, imageUrl: string) => void
   onUpdateEntry: (entryId: string, updates: Partial<TimelineEntry>) => void
   onOpenDoc: (entry: TimelineEntry) => void
+  onOpenPhotoReport?: (reportId: string) => void
+  onAddCrew: (name: string, phone: string) => void
   showToast: ShowToastFn
   initialTab?: JobTab
   embedded?: boolean
@@ -70,13 +72,16 @@ export function JobDetailScreen({
   onPhotoReport,
   onAddNote,
   onAddPhoto,
-  onUpdateEntry,
+  onUpdateEntry: _onUpdateEntry,
   onOpenDoc,
+  onOpenPhotoReport,
+  onAddCrew,
   showToast,
   initialTab,
   embedded = false,
 }: JobDetailScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [noteText, setNoteText] = useState('')
   const [activeTab, setActiveTab] = useState<JobTab>(initialTab ?? 'timeline')
@@ -181,9 +186,7 @@ export function JobDetailScreen({
   }
 
   const tabClass = (tab: JobTab) =>
-    `min-h-[36px] flex-1 rounded-full px-3 font-body text-sm capitalize ${
-      activeTab === tab ? 'chip-active' : 'chip-inactive'
-    }`
+    `tab-pill ${activeTab === tab ? 'tab-pill-active' : ''}`
 
   return (
     <div
@@ -193,7 +196,7 @@ export function JobDetailScreen({
     >
       <div className={`flex items-center justify-between ${embedded ? 'justify-end' : ''}`}>
         {!embedded && (
-          <button type="button" onClick={onBack} className="flex h-12 w-12 shrink-0 items-center justify-center">
+          <button type="button" onClick={onBack} className={BACK_BTN}>
             <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
           </button>
         )}
@@ -309,6 +312,14 @@ export function JobDetailScreen({
           </button>
           <button
             type="button"
+            onClick={() => setInviteOpen(true)}
+            className="flex h-12 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]"
+          >
+            <UserPlus size={18} strokeWidth={1.5} />
+            Invite to job
+          </button>
+          <button
+            type="button"
             onClick={onNudge}
             className="flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 font-body text-[var(--color-text-primary)]"
           >
@@ -319,7 +330,7 @@ export function JobDetailScreen({
       )}
 
       {!inPhotoFlow && (
-        <div className="mt-4 flex gap-2">
+        <div className="tab-pills mt-4">
           <button type="button" onClick={() => setActiveTab('timeline')} className={tabClass('timeline')}>
             Timeline
           </button>
@@ -339,14 +350,14 @@ export function JobDetailScreen({
               <div className="relative pl-5 pt-2">
                 <div className="absolute left-[4px] top-3 h-[10px] w-[10px] rounded-full border-2 border-[var(--color-border)] bg-[var(--color-border-2)] opacity-40" />
                 <div className="absolute bottom-0 left-[8px] top-[18px] border-l border-dashed border-[var(--color-border)]" />
-                <div className="py-8 pl-6 text-center">
-                  <p className="font-body text-[var(--color-text-tertiary)]">No entries yet.</p>
+                <div className="py-8 pl-6 text-left">
+                  <p className="font-body text-[15px] text-[var(--color-text-secondary)]">No entries yet.</p>
                   <button
                     type="button"
                     onClick={() => setDrawerOpen(true)}
                     className="mt-2 font-body text-[var(--color-text-secondary)] underline"
                   >
-                    Tap + Add to job to get started.
+                    + Add to job
                   </button>
                 </div>
               </div>
@@ -358,13 +369,15 @@ export function JobDetailScreen({
                     entry={entry}
                     isLast={i === job.timeline.length - 1}
                     expanded={expandedEntryId === entry.id}
-                    onToggle={() =>
-                      setExpandedEntryId((id) => (id === entry.id ? null : entry.id))
-                    }
-                    onOpenDoc={() => onOpenDoc(entry)}
-                    onToggleVisibility={() =>
-                      onUpdateEntry(entry.id, { clientVisible: !entry.clientVisible })
-                    }
+                    onToggle={() => {
+                      if (entry.type === 'quote' || entry.type === 'invoice') {
+                        onOpenDoc(entry)
+                      } else if (entry.type === 'photo-report' && onOpenPhotoReport) {
+                        onOpenPhotoReport(entry.content)
+                      } else {
+                        setExpandedEntryId((id) => (id === entry.id ? null : entry.id))
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -460,6 +473,13 @@ export function JobDetailScreen({
       </div>
 
       <JobActionDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onSelect={handleAction} />
+      <InviteToJobDrawer
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        job={job}
+        onAddCrew={onAddCrew}
+        showToast={showToast}
+      />
 
       <AnimatePresence>
         {noteModalOpen && (
@@ -545,12 +565,10 @@ export function JobDetailScreen({
 
 function timelineSummary(entry: TimelineEntry): string {
   switch (entry.type) {
-    case 'note': {
-      const text = entry.polishedContent ?? entry.content
-      return text.length > 60 ? `${text.slice(0, 60)}...` : text
-    }
+    case 'note':
+      return 'Note added'
     case 'photo':
-      return entry.content ? `Photo added — ${entry.content.slice(0, 30)}` : 'Photo added'
+      return 'Photo added'
     case 'quote':
       return `Quote — $${entry.amount?.toLocaleString() ?? '0'}`
     case 'invoice':
@@ -569,15 +587,11 @@ function TimelineRow({
   isLast,
   expanded,
   onToggle,
-  onOpenDoc,
-  onToggleVisibility,
 }: {
   entry: TimelineEntry
   isLast: boolean
   expanded: boolean
   onToggle: () => void
-  onOpenDoc: () => void
-  onToggleVisibility: () => void
 }) {
   const iconProps = {
     size: 16 as const,
@@ -586,8 +600,8 @@ function TimelineRow({
     style: { display: 'block' as const },
   }
 
-  const visible = entry.clientVisible === true
   const noteContent = entry.polishedContent ?? entry.content
+  const canExpand = entry.type === 'note' || entry.type === 'photo' || entry.type === 'nudge'
 
   const renderIcon = () => {
     switch (entry.type) {
@@ -632,7 +646,7 @@ function TimelineRow({
         </span>
       </button>
       <AnimatePresence initial={false}>
-        {expanded && (
+        {expanded && canExpand && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -649,42 +663,14 @@ function TimelineRow({
               {entry.type === 'photo' && entry.imageUrl && (
                 <>
                   <img src={entry.imageUrl} alt="" className="w-full rounded-xl object-cover" />
-                  {entry.content && (
+                  {entry.content && entry.content !== 'Site photo' && (
                     <p className="mt-2 font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
                   )}
                 </>
               )}
-              {(entry.type === 'quote' || entry.type === 'invoice') && (
-                <div className="flex flex-col gap-2">
-                  <p className="font-body capitalize text-[var(--color-text-primary)]">
-                    {entry.type} — ${entry.amount?.toLocaleString() ?? '0'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onOpenDoc}
-                    className="min-h-[40px] rounded-lg border border-[var(--color-border)] font-body text-sm text-[var(--color-text-primary)]"
-                  >
-                    View {entry.type}
-                  </button>
-                </div>
-              )}
-              {entry.type === 'photo-report' && (
-                <p className="font-body text-[15px] text-[var(--color-text-primary)]">Photo report</p>
-              )}
               {entry.type === 'nudge' && (
                 <p className="font-body text-[15px] text-[var(--color-text-primary)]">{entry.content}</p>
               )}
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={onToggleVisibility}
-                  className="flex h-8 items-center gap-1 rounded-lg px-2 font-body text-xs text-[var(--color-text-secondary)]"
-                  title={visible ? 'Visible to client' : 'Hidden from client'}
-                >
-                  {visible ? <Eye size={14} /> : <EyeOff size={14} />}
-                  {visible ? 'Visible to client' : 'Hidden from client'}
-                </button>
-              </div>
             </div>
           </motion.div>
         )}

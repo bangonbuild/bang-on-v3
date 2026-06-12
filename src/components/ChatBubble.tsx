@@ -13,9 +13,18 @@ export function ChatBubble({ message }: ChatBubbleProps) {
     return (
       <div className="flex justify-end">
         <div className="max-w-[85%] rounded-xl bg-[var(--color-surface-2)] px-4 py-3">
-          <p className="font-body text-[15px] leading-relaxed text-[var(--color-text-primary)]">
-            {message.content}
-          </p>
+          {message.imageUrl && (
+            <img
+              src={message.imageUrl}
+              alt=""
+              className="mb-2 w-[120px] rounded-lg object-cover"
+            />
+          )}
+          {message.content && (
+            <p className="font-body text-[15px] leading-relaxed text-[var(--color-text-primary)]">
+              {message.content}
+            </p>
+          )}
         </div>
       </div>
     )

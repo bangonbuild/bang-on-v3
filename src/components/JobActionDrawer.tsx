@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Camera, ChevronRight, FileText, ImageIcon, ReceiptText, StickyNote } from 'lucide-react'
+import { DRAWER_HEIGHT } from '../utils/layout'
 import { Icon } from './Icon'
 
 export type JobAction = 'note' | 'photo' | 'quote' | 'invoice' | 'photo-report'
@@ -37,9 +38,10 @@ export function JobActionDrawer({ open, onClose, onSelect }: JobActionDrawerProp
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="fixed bottom-0 left-0 right-0 z-[71] rounded-t-[20px] bg-[var(--color-surface)] px-4 pb-8 pt-3"
+            className={`fixed bottom-0 left-0 right-0 z-[71] flex ${DRAWER_HEIGHT} flex-col overflow-hidden rounded-t-[20px] bg-[var(--color-surface)] px-4 pt-3`}
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--color-border-2)]" />
+            <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full bg-[var(--color-border-2)]" />
+            <div className="min-h-0 flex-1 overflow-y-auto pb-8">
             <div className="flex flex-col gap-2">
               {actions.map(({ action, icon, label }) => (
                 <button
@@ -56,6 +58,7 @@ export function JobActionDrawer({ open, onClose, onSelect }: JobActionDrawerProp
                   <Icon icon={ChevronRight} size={18} muted />
                 </button>
               ))}
+            </div>
             </div>
           </motion.div>
         </>

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 :root {
+  --bottom-nav-height: 64px;
   --color-bg: #14120a;
   --color-surface: #26241e;
   --color-surface-2: #2d2b25;
@@ -92,6 +93,42 @@ body,
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+.jobs-strip {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.jobs-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-pills {
+  display: flex;
+  gap: 0;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--color-surface-2);
+}
+
+.tab-pill {
+  flex: 1;
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.tab-pill-active {
+  background: var(--color-text-primary);
+  color: var(--color-bg);
 }
 
 .text-primary {

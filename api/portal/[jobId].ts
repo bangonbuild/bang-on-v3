@@ -13,7 +13,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log('[portal] looking up key:', `portal:${jobId}`)
     const data = await kv.get(`portal:${jobId}`)
+    console.log('[portal] data found:', !!data)
 
     if (!data) {
       return res.status(404).json({ error: 'Job not found or link has expired.' })

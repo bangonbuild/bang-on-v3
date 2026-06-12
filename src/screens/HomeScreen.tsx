@@ -98,7 +98,7 @@ export function HomeScreen({
     <>
       <p className="section-label section-gap">Your jobs</p>
       {initialLoading ? (
-        <div className={`mt-2 flex gap-2 overflow-x-auto pb-1 ${isDesktop ? '' : '-mx-4 px-4'}`}>
+        <div className={`jobs-strip mt-2 flex gap-2 pb-1 ${isDesktop ? '' : '-mx-4 px-4'}`}>
           <SkeletonItem className="w-[220px] shrink-0" height={120} />
           <SkeletonItem className="w-[220px] shrink-0" height={120} />
         </div>
@@ -117,7 +117,7 @@ export function HomeScreen({
           </div>
         </button>
       ) : (
-        <div className={`mt-2 flex gap-2 overflow-x-auto pb-1 ${isDesktop ? '' : '-mx-4 px-4'}`}>
+        <div className={`jobs-strip mt-2 flex gap-2 pb-1 ${isDesktop ? '' : '-mx-4 px-4'}`}>
           {activeJobs.map((job) => (
             <JobCard key={job.id} job={job} onClick={() => onJob(job.id)} />
           ))}
@@ -272,9 +272,14 @@ export function HomeScreen({
     <div className={containerClass}>
       <header>
         <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
           <h1 className="font-display text-[20px] font-semibold leading-none text-[var(--color-text-primary)]">
             datum.ai
           </h1>
+          <span className="rounded-full border border-[var(--color-border-2)] bg-[var(--color-surface-2)] px-[10px] py-[6px] font-display text-[11px] text-[var(--color-text-secondary)]">
+            Solo
+          </span>
+        </div>
           <button
             type="button"
             onClick={onOpenSettings}
@@ -285,7 +290,7 @@ export function HomeScreen({
           </button>
         </div>
         {showWeather && (
-          <div className="mt-2">
+          <div className="mt-1.5">
             <WeatherDisplay
               temp={weather.temp}
               description={weather.description}
@@ -297,7 +302,7 @@ export function HomeScreen({
         )}
       </header>
 
-      <div className="mt-8">{welcomeBlock}</div>
+      <div className="mt-7">{welcomeBlock}</div>
       {jobsSection}
       {activitySection}
       {newsSection}

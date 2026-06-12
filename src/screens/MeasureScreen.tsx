@@ -1,6 +1,6 @@
 import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { NAV_PB } from '../utils/layout'
+import { NAV_PB, BACK_BTN } from '../utils/layout'
 
 interface MeasureScreenProps {
   onBack: () => void
@@ -15,7 +15,7 @@ export function MeasureScreen({ onBack, onNudge }: MeasureScreenProps) {
   return (
     <div className={`px-4 pt-6 ${NAV_PB}`}>
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="min-h-[48px] min-w-[48px]">
+        <button type="button" onClick={onBack} className={BACK_BTN}>
           <ArrowLeft size={22} className="text-[var(--color-text-primary)]" />
         </button>
         <h1 className="font-display text-xl font-bold text-[var(--color-text-primary)]">Measure & calculate</h1>

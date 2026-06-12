@@ -6,7 +6,7 @@ import { reportMarkdownComponents } from '../utils/markdownComponents'
 import { ShareUpdateModal } from './ShareUpdateModal'
 import { generateDocument, mapFetchError } from '../services/aiService'
 import type { Job, PaymentDetails, PhotoReportResult, Profile, SavedPhotoReport } from '../types'
-import { NAV_PB } from '../utils/layout'
+import { NAV_PB, BACK_BTN } from '../utils/layout'
 import { encodeImage, formatDate, loadJson, STORAGE_KEYS } from '../utils/storage'
 import type { ShowToastFn } from '../hooks/useToast'
 
@@ -218,6 +218,8 @@ Use bullet points for lists of items. Write in clear Australian English.`
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         prefillMessage={sharePrefill}
+        notificationType="photo-report"
+        document={report ?? undefined}
         showToast={showToast}
       />
       </>
@@ -226,7 +228,7 @@ Use bullet points for lists of items. Write in clear Australian English.`
 
   return (
     <div className={`fixed inset-0 z-[85] flex flex-col overflow-y-auto bg-[var(--color-bg)] px-4 pt-6 ${NAV_PB}`}>
-      <button type="button" onClick={onClose} className="flex h-12 w-12 items-center justify-center self-start">
+      <button type="button" onClick={onClose} className={`${BACK_BTN} self-start`}>
         <ArrowLeft size={22} strokeWidth={1.5} className="text-[var(--color-text-primary)]" />
       </button>
       <h2 className="font-display mt-4 text-xl font-bold text-[var(--color-text-primary)]">Photo report</h2>

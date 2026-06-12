@@ -5,7 +5,7 @@ import { ScreenTitle } from '../components/ScreenTitle'
 import { ToolCard } from '../components/ToolCard'
 import { useDesktop } from '../hooks/useDesktop'
 import type { SavedPhotoReport } from '../types'
-import { DESKTOP_PB } from '../utils/layout'
+import { DESKTOP_PB, NAV_PB } from '../utils/layout'
 import { formatDate } from '../utils/storage'
 
 interface ToolboxScreenProps {
@@ -30,7 +30,7 @@ export function ToolboxScreen({
   onSuggest,
 }: ToolboxScreenProps) {
   const isDesktop = useDesktop()
-  const padClass = isDesktop ? DESKTOP_PB : 'pb-24'
+  const padClass = isDesktop ? DESKTOP_PB : NAV_PB
   const containerClass = isDesktop ? `overflow-y-auto px-10 pt-8 ${padClass}` : `overflow-y-auto px-4 pt-6 ${padClass}`
 
   const toolsSection = (
